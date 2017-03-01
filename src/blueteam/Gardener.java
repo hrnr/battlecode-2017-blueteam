@@ -1,6 +1,12 @@
 package blueteam;
 
-import battlecode.common.*;
+import battlecode.common.Clock;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
 
 public class Gardener extends Robot {
 
@@ -42,11 +48,7 @@ public class Gardener extends Robot {
                 // black dot in debugging
                 rc.setIndicatorDot(rc.getLocation().add(dir),1,1,1);
 
-                try {
                     tryMove(dir);
-                } catch (GameActionException e) {
-
-                }
                 return false;
             }
         }
@@ -147,11 +149,8 @@ public class Gardener extends Robot {
                     System.out.println("Gardener ID: "+ rc.getID() +" found place to build garden");
                 }
                 else {
-                    try{
                         tryMove(randomDirection());
-                    }
-                    catch (GameActionException e)
-                    {}
+
                 }
                 break;
             case BUILDING:
