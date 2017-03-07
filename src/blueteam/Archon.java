@@ -31,8 +31,9 @@ public class Archon extends Robot {
 		// randomly attempt to build a gardener if we need more
 		Direction dir = randomDirection();
 		int numOfGardeners = getRobotCount(RobotType.GARDENER);
-		if (numOfGardeners < TeamConstants.DESIRED_NUMBER_OF_GARDENERS && rc.canHireGardener(dir)
-				&& Math.random() < 1.0 / numberOfArchons) {
+		int gardenersNeeded = TeamConstants.DESIRED_NUMBER_OF_GARDENERS - numOfGardeners;
+		if (rc.canHireGardener(dir)
+				&& Math.random() < (double) gardenersNeeded / numberOfArchons) {
 			rc.hireGardener(dir);
 		}
 
