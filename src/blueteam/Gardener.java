@@ -214,10 +214,7 @@ public class Gardener extends Robot {
 			// try to build one tree in garden
 			buildGarden();
 			// try to build robots
-			if (scoutbuilded)
-				while (!build(RobotType.SOLDIER))
-					Clock.yield();
-			else {
+			if (!scoutbuilded) {
 				while (!build(RobotType.SCOUT))
 					Clock.yield();
 				scoutbuilded = true;
