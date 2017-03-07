@@ -5,18 +5,20 @@ import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
 
 public class Archon extends Robot {
 
-	int numberOfArchons;
+
 
 	Archon(RobotController rc) {
 		super(rc);
-		numberOfArchons = rc.getInitialArchonLocations(rc.getTeam()).length;
 	}
 
 	@Override
 	void step() throws GameActionException {
+		int numberOfArchons = getRobotCount();
+
 		// move away from enemy
 		RobotInfo[] robots = rc.senseNearbyRobots(-1, enemy);
 		if (robots.length > 0) {
@@ -28,11 +30,10 @@ public class Archon extends Robot {
 
 		// randomly attempt to build a gardener if we need more
 		Direction dir = randomDirection();
-		int numOfGardeners = rc.readBroadcast(TeamConstants.GARDENERS_COUNT_CHANNEL);
+		int numOfGardeners = getRobotCount(RobotType.GARDENER);
 		if (numOfGardeners < TeamConstants.DESIRED_NUMBER_OF_GARDENERS && rc.canHireGardener(dir)
-				&& Math.random() < 0.5) {
+				&& Math.random() < 1.0 / numberOfArchons) {
 			rc.hireGardener(dir);
-			rc.broadcast(TeamConstants.GARDENERS_COUNT_CHANNEL, numOfGardeners + 1);
 		}
 
 		// donate all bullets if we can win immediately
