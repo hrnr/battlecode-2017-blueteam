@@ -39,23 +39,25 @@ public class Archon extends Robot {
 		}
 
 		// we want to preserve some bullet points for gardener
-		if (!canSpent() && getRobotCount(RobotType.GARDENER) > 0) {
+		if (!canSpent() && getRobotCount(RobotType.GARDENER) > 2) {
 			return;
 		}
 
 		// randomly attempt to build a gardener if we need more
 		Direction dir = randomDirection();
-		int numOfGardeners = getRobotCount(RobotType.GARDENER);
-		int gardenersNeeded = TeamConstants.DESIRED_NUMBER_OF_GARDENERS - numOfGardeners;
 		if (rc.canHireGardener(dir)
-				&& Math.random() < (double) gardenersNeeded / numberOfArchons) {
+				&& TeamConstants.DESIRED_NUMBER_OF_GARDENERS > getRobotCount(RobotType.GARDENER)) {
 			rc.hireGardener(dir);
 		}
 
 		// buy some victory points randomly
-		if (Math.random() < 0.05 / numberOfArchons) {
-			rc.donate(rc.getTeamBullets() / 4);
-		}
+		if (canSpent())
+			if (Math.random() < 0.05 / numberOfArchons) {
+				rc.donate(rc.getTeamBullets() / 4);
+			}
+			else if (rc.getTeamBullets() > 800)
+				rc.donate(rc.getTeamBullets() - 800);
+
 	}
 
 }
