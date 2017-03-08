@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
 
+import battlecode.common.BodyInfo;
 import battlecode.common.BulletInfo;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -43,6 +44,27 @@ abstract public class Robot {
 	 */
 	Direction randomDirection() {
 		return new Direction((float) Math.random() * 2 * (float) Math.PI);
+	}
+
+	// The maximum number of tries per turn for finding a direction in which
+	// the robot can move.
+	private static final int MAX_TRIES_LIMIT = 100;
+
+	/**
+	 * Tries to generate a random direction into which the robot can move freely
+	 * by at least half of its stride radius. If it fails, returns a random
+	 * direction.
+	 *
+	 * @return
+	 */
+	protected Direction randomFreeDirection() {
+		Direction rndDir = null;
+		for (int i = 0; i < MAX_TRIES_LIMIT; i++) {
+			rndDir = randomDirection();
+			if (rc.canMove(rndDir, rc.getType().strideRadius / 2))
+				return rndDir;
+		}
+		return rndDir;
 	}
 
 	/**
@@ -144,6 +166,61 @@ abstract public class Robot {
 		float perpendicularDist = (float) Math.abs(distToRobot * Math.sin(theta));
 
 		return (perpendicularDist <= rc.getType().bodyRadius);
+	}
+
+	/**
+	 * Tests if I will hit the given object providing I shoot into the direction
+	 * "shootingDirection". Can be used with trees or robots.
+	 *
+	 * @param shootingDirection
+	 * @param body
+	 * @return
+	 */
+	boolean willIHitBody(Direction shootingDirection, BodyInfo body) {
+		MapLocation myLocation = rc.getLocation();
+		MapLocation robotLocation = body.getLocation();
+
+		Direction directionToRobot = myLocation.directionTo(robotLocation);
+		float theta = shootingDirection.radiansBetween(directionToRobot);
+		if (Math.abs(theta) > Math.PI / 2) {
+			return false;
+		}
+		float distToRobot = myLocation.distanceTo(robotLocation);
+		float perpendicularDist = (float) Math.abs(distToRobot * Math.sin(theta));
+		return perpendicularDist <= body.getRadius();
+	}
+
+	/**
+	 * Alias for the function willIHitBody
+	 *
+	 * @param shootingDirection
+	 * @param robot
+	 * @return
+	 */
+	boolean willIHitRobot(Direction shootingDirection, RobotInfo robot) {
+		return willIHitBody(shootingDirection, robot);
+	}
+
+	/**
+	 * Tests if I will hit some object from the list of trees/robots providing I
+	 * shoot into the direction "shootingDirection"
+	 *
+	 * @param shootingDirection
+	 * @param bodies
+	 *            List of robots/trees sorted by distance from me.
+	 * @param maxRadius
+	 *            Skips robots/trees that are further from me than the given
+	 *            distance.
+	 * @return
+	 */
+	<T extends BodyInfo> boolean willIHitSomething(Direction shootingDirection, T[] bodies, float maxRadius) {
+		for (BodyInfo friend : bodies) {
+			if (friend.getLocation().distanceTo(rc.getLocation()) > maxRadius)
+				return false;
+			if (willIHitBody(shootingDirection, friend))
+				return true;
+		}
+		return false;
 	}
 
 	/**

@@ -51,8 +51,8 @@ public class LumberJack extends Robot {
 
 			MapLocation enemyLocation = robots[0].getLocation();
 			Direction toEnemy = myLocation.directionTo(enemyLocation);
-			tryMove(toEnemy);
-			return;
+			if (tryMove(toEnemy))
+				return;
 		}
 		TreeInfo[] trees = rc.senseNearbyTrees();
 		for (TreeInfo treeInfo : trees) {
@@ -69,12 +69,17 @@ public class LumberJack extends Robot {
 			rc.setIndicatorDot(myLocation, 0, 255, 0);
 			return;
 		}
+		if (rc.hasMoved())
+			return;
 		// No tree in sight -> move randomly:
 		if (!rc.canMove(moveDirection, rc.getType().strideRadius / 2)) {
-			rc.setIndicatorDot(myLocation, 255, 0, 0);
-			moveDirection = randomDirection();
+			moveDirection = randomFreeDirection();
 		}
-		tryMove(moveDirection);
+		if (!tryMove(moveDirection)) {
+			if (rc.canMove(moveDirection, rc.getType().strideRadius / 2))
+				rc.move(moveDirection, rc.getType().strideRadius / 2);
+		}
+
 	}
 
 }
