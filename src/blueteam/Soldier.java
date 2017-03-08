@@ -19,8 +19,6 @@ import battlecode.common.TreeInfo;
 public class Soldier extends Robot {
 
 	private Direction moveDir;
-	// probability that the chosen direction is random.
-	private double RANDOM_MOVE_PROB = .75;
 
 	Soldier(RobotController rc) {
 		super(rc);
@@ -57,7 +55,7 @@ public class Soldier extends Robot {
 	}
 
 	private void changeMoveDirection() {
-		if (Math.random() < RANDOM_MOVE_PROB) {
+		if (Math.random() < TeamConstants.SOLDIER_RANDOM_MOVE_PROB) {
 			moveDir = randomFreeDirection();
 		} else {
 			moveDir = getDirToEnemyArchonInitLoc();

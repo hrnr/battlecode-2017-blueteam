@@ -46,10 +46,6 @@ abstract public class Robot {
 		return new Direction((float) Math.random() * 2 * (float) Math.PI);
 	}
 
-	// The maximum number of tries per turn for finding a direction in which
-	// the robot can move.
-	private static final int MAX_TRIES_LIMIT = 100;
-
 	/**
 	 * Tries to generate a random direction into which the robot can move freely
 	 * by at least half of its stride radius. If it fails, returns a random
@@ -59,7 +55,7 @@ abstract public class Robot {
 	 */
 	protected Direction randomFreeDirection() {
 		Direction rndDir = null;
-		for (int i = 0; i < MAX_TRIES_LIMIT; i++) {
+		for (int i = 0; i < TeamConstants.GENERATING_DIR_MAX_TRIES_LIMIT; i++) {
 			rndDir = randomDirection();
 			if (rc.canMove(rndDir, rc.getType().strideRadius / 2))
 				return rndDir;
