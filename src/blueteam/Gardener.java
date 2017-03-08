@@ -24,6 +24,7 @@ public class Gardener extends Robot {
 	Direction currentDir = randomDirection();
 	boolean lumberjackBuilded = false;
 	boolean scoutBuilded = false;
+	boolean soldierBuilded = false;
 
 	/**
 	 * Searches for suitable location to start building hexagonal tree garden
@@ -37,6 +38,7 @@ public class Gardener extends Robot {
 		if (roundCounter > TeamConstants.GARDENERS_DIRECT_PATH_LENGTH) {
 			roundCounter = 0;
 			currentDir = randomDirection();
+
 		}
 		boolean rdyToBuild = true;
 		//check for robots
@@ -47,7 +49,7 @@ public class Gardener extends Robot {
 		try {
 			if (!rc.onTheMap(rc.getLocation(), radius)) {
 				rdyToBuild = false;
-				roundCounter += 5;
+				roundCounter += 10;
 			}
 		} catch (GameActionException e) {
 			System.out.println("bad radius in find loc function!");
@@ -210,14 +212,24 @@ public class Gardener extends Robot {
 		case BUILDING:
 			// try to build one tree in garden
 			buildGarden();
-			// try to build robots
-			if (!scoutBuilded) {
-				while (!build(RobotType.SCOUT))
-					Clock.yield();
-				scoutBuilded = true;
-			}
 			// water garden
 			waterGarden();
+			// force to build robots
+			if (!scoutBuilded) {
+				while (!build(RobotType.SCOUT)) {
+					waterGarden();
+					Clock.yield();
+				}
+				scoutBuilded = true;
+			}
+			else if (!soldierBuilded)
+			{
+				while (!build(RobotType.SOLDIER)) {
+					waterGarden();
+					Clock.yield();
+				}
+				soldierBuilded = true;
+			}
 			// try to build again
 			if (scoutBuilded)
 				build(RobotType.SOLDIER);
@@ -235,7 +247,7 @@ public class Gardener extends Robot {
 			break;
 		case LETSCHOP:
 			roundCounter = 0;
-			// build atleast one lumberjack and than try to build another in next 35 rounds
+			// build atleast one lumberjack and than try to build another in next  rounds
 			for (int i = 0; i < 2; i++) {
 				roundCounter = 0;
 				while (!build(RobotType.LUMBERJACK, true) && (roundCounter < 35 || i == 0)) {
