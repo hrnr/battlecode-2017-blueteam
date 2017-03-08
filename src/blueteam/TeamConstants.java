@@ -15,6 +15,10 @@ public abstract interface TeamConstants {
 	 */
 	public static final double MINIMUM_HEALTH_PERCENTAGE = 0.2;
 	/**
+	 * minimum absolute amount of HP to consider robot alive
+	 */
+	public static final int MINIMUM_HEALTH = 5;
+	/**
 	 * channels for robot counters. this is array, to stay safe, channels 0..10
 	 * are reserved for this.
 	 */

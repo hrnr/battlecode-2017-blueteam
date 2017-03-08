@@ -52,7 +52,12 @@ abstract public class Robot {
 	 * advertise imminent death to all friends, so they could mourn their buddy
 	 */
 	private void checkHealth() {
-		if (alive && rc.getHealth() < rc.getType().getStartingHealth() * TeamConstants.MINIMUM_HEALTH_PERCENTAGE) {
+		if (!alive) {
+			return;
+		}
+
+		if (rc.getHealth() < rc.getType().getStartingHealth() * TeamConstants.MINIMUM_HEALTH_PERCENTAGE
+				|| rc.getHealth() < TeamConstants.MINIMUM_HEALTH) {
 			updateRobotCount(-1);
 			alive = false;
 		}
