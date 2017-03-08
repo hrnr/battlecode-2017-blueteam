@@ -10,4 +10,18 @@ public abstract interface TeamConstants {
 	// (Otherwise the soldier tries to move towards the enemy archon's initial
 	// location.)
 	public static final double SOLDIER_RANDOM_MOVE_PROB = .75;
+	/**
+	 * robots having less than MINIMUM_HEALTH_PERCENTAGE HP are considered dead
+	 */
+	public static final double MINIMUM_HEALTH_PERCENTAGE = 0.2;
+	/**
+	 * minimum absolute amount of HP to consider robot alive
+	 */
+	public static final int MINIMUM_HEALTH = 5;
+	/**
+	 * channels for robot counters. this is array, to stay safe, channels 0..10
+	 * are reserved for this.
+	 */
+	public static final int ROBOT_COUNTERS_BEGIN = 0;
+	public static final int MINIMUM_BULLETS_TO_SAVE = 300;
 }

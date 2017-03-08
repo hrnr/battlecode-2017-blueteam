@@ -20,15 +20,18 @@ abstract public class Robot {
 	RobotController rc;
 	Team enemy;
 	Random rand;
+	private boolean alive;
 
 	Robot(RobotController rc) {
 		this.rc = rc;
 		enemy = rc.getTeam().opponent();
 		rand = new Random();
+		newRobotBorn();
 	}
 
 	void run() throws GameActionException {
 		while (true) {
+			checkHealth();
 			dodge();
 			step();
 			Clock.yield();
@@ -36,6 +39,72 @@ abstract public class Robot {
 	}
 
 	abstract void step() throws GameActionException;
+
+	/**
+	 * advertise to others that this robot is alive
+	 */
+	private void newRobotBorn() {
+		alive = true;
+		updateRobotCount(1);
+	}
+
+	/**
+	 * advertise imminent death to all friends, so they could mourn their buddy
+	 */
+	private void checkHealth() {
+		if (!alive) {
+			return;
+		}
+
+		if (rc.getHealth() < rc.getType().getStartingHealth() * TeamConstants.MINIMUM_HEALTH_PERCENTAGE
+				|| rc.getHealth() < TeamConstants.MINIMUM_HEALTH) {
+			updateRobotCount(-1);
+			alive = false;
+		}
+	}
+
+	/**
+	 * updates shared information about how much robots we have of given type
+	 *
+	 * @param i
+	 *            how much to update
+	 */
+	private void updateRobotCount(int i) {
+		int channel = TeamConstants.ROBOT_COUNTERS_BEGIN + rc.getType().ordinal();
+		try {
+			int current = rc.readBroadcast(channel);
+			rc.broadcast(channel, current + i);
+		} catch (GameActionException e) {
+			// should never happen
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * returns how many robots of the given type we have in game.
+	 *
+	 * @return robot count
+	 */
+	int getRobotCount(RobotType type) {
+		int channel = TeamConstants.ROBOT_COUNTERS_BEGIN + type.ordinal();
+		try {
+			int count = rc.readBroadcast(channel);
+			return count;
+		} catch (GameActionException e) {
+			// should never happen
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	/**
+	 * returns how many robots of the same type we have in game.
+	 *
+	 * @return robot count
+	 */
+	int getRobotCount() {
+		return getRobotCount(rc.getType());
+	}
 
 	/**
 	 * Returns a random Direction
