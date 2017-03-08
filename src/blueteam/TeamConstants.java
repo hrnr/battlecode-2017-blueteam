@@ -6,7 +6,6 @@ public abstract interface TeamConstants {
 	public static final int DESIRED_NUMBER_OF_GARDENERS = 10;
 	public static final int GARDENERS_COUNT_CHANNEL = 0;
 
-
 	// The maximum number of tries per turn for finding a direction in which
 	// the robot can move.
 	public static final int GENERATING_DIR_MAX_TRIES_LIMIT = 100;
@@ -28,10 +27,6 @@ public abstract interface TeamConstants {
 	 */
 	public static final int ROBOT_COUNTERS_BEGIN = 0;
 	public static final int MINIMUM_BULLETS_TO_SAVE = 300;
-
-	public static final int GARDENERS_DIRECT_PATH_LENGTH = 40;
-
-	public static final float GARDENERS_DEFAULT_FREE_SPOT_RADIUS = 6.0f;
 
 	public static final int GARDENERS_DIRECT_PATH_LENGTH = 40;
 	public static final float GARDENERS_DEFAULT_FREE_SPOT_RADIUS = 6.5f;
