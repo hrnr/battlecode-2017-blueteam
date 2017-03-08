@@ -57,7 +57,7 @@ public class Archon extends Robot {
 				rc.donate(rc.getTeamBullets() / 4);
 			}
 			else if (rc.getTeamBullets() > 800)
-				rc.donate(rc.getTeamBullets() - 800);
+				rc.donate(rc.getVictoryPointCost());
 
 	}
 
