@@ -6,7 +6,6 @@ public abstract interface TeamConstants {
 	public static final int DESIRED_NUMBER_OF_GARDENERS = 6;
 	public static final int GARDENERS_COUNT_CHANNEL = 0;
 
-
 	// The maximum number of tries per turn for finding a direction in which
 	// the robot can move.
 	public static final int GENERATING_DIR_MAX_TRIES_LIMIT = 100;
@@ -33,5 +32,5 @@ public abstract interface TeamConstants {
 	public static final float GARDENERS_DEFAULT_FREE_SPOT_RADIUS = 6.5f;
 
 	public static final Direction GARDENERS_GARDEN_ENTRANCE = Direction.WEST;
-	public static final int GARDENER_NUM_OF_TREES_TO_BUILD_LUMBER = 10;
+	public static final int GARDENER_NUM_OF_TREES_TO_BUILD_LUMBER = 5;
 }
