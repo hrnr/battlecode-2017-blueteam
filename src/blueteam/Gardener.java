@@ -7,6 +7,7 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import battlecode.common.Team;
 import battlecode.common.TreeInfo;
 
 public class Gardener extends Robot {
@@ -181,12 +182,9 @@ public class Gardener extends Robot {
 	 * @return true if is more than TeamConstants.GARDENER_NUM_OF_TREES_TO_BUILD_LUMBER
 	 */
 	boolean isInWoods() {
-		TreeInfo[] nearbyTrees = rc.senseNearbyTrees(TeamConstants.GARDENERS_DEFAULT_FREE_SPOT_RADIUS);
-		Integer curr = 0;
-		for (TreeInfo tree : nearbyTrees)
-			if (!tree.getTeam().equals(rc.getTeam()))
-				curr++;
-		if (curr > TeamConstants.GARDENER_NUM_OF_TREES_TO_BUILD_LUMBER)
+		TreeInfo[] nearbyTrees = rc.senseNearbyTrees(TeamConstants.GARDENERS_DEFAULT_FREE_SPOT_RADIUS, Team.NEUTRAL);
+		System.out.println(nearbyTrees.length);
+		if (nearbyTrees.length > TeamConstants.GARDENER_NUM_OF_TREES_TO_BUILD_LUMBER)
 			return true;
 		else
 			return false;
@@ -212,7 +210,14 @@ public class Gardener extends Robot {
 				state = GardenerState.FINDING;
 			break;
 		case FINDING:
-			if (isInWoods() && lumberjackBuilded < 2) {
+			while (roundCounter < 20)
+			{
+				if (findSpot())
+					state = GardenerState.BUILDING;
+				roundCounter++;
+				Clock.yield();
+			}
+			if (isInWoods() && lumberjackBuilded < 1) {
 				state = GardenerState.LETSCHOP;
 				lumberjackBuilded++;
 			} else if (findSpot())
