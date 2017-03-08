@@ -175,7 +175,6 @@ public class Gardener extends Robot {
 		for (TreeInfo tree : nearbyTrees)
 			if (!tree.getTeam().equals(rc.getTeam()))
 				curr++;
-		//TODO const
 		if (curr > TeamConstants.GARDENER_NUM_OF_TREES_TO_BUILD_LUMBER)
 			return true;
 		else
