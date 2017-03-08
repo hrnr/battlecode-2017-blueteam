@@ -7,6 +7,7 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import battlecode.common.TreeInfo;
 
 public class Gardener extends Robot {
 
@@ -15,10 +16,15 @@ public class Gardener extends Robot {
 	}
 
 	enum GardenerState {
-		FINDING, BUILDING
+		FINDING, BUILDING, STARTING, ONLYSOLDIERS, LETSCHOP
 	}
 
-	GardenerState state = GardenerState.FINDING;
+	GardenerState state = GardenerState.STARTING;
+	Integer roundCounter = 0;
+	Direction currentDir = randomDirection();
+	boolean lumberjackBuilded = false;
+	boolean scoutBuilded = false;
+	boolean soldierBuilded = false;
 
 	/**
 	 * Searches for suitable location to start building hexagonal tree garden
@@ -29,33 +35,29 @@ public class Gardener extends Robot {
 	boolean findSpot(float radius) {
 		// get robots in radius
 		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(radius);
-		for (RobotInfo robot : nearbyRobots) {
-			// check for archrons and gardeners around
-			//TODO make cleverer location finding
-			if (robot.getType().equals(RobotType.GARDENER) || robot.getType().equals(RobotType.ARCHON)) {
-				Direction dir;
-				// TODO use constants
-				// go away from gardener/archon or go in direction of enemy
-				// TODO is Math.random best way ?
-				if (Math.random() > 0.2) {
-					if (Math.random() > 0.5)
-						dir = rc.getLocation().directionTo(rc.getInitialArchonLocations(enemy)[0])
-								.rotateLeftDegrees((float) Math.random() * 60);
-					else
-						dir = rc.getLocation().directionTo(rc.getInitialArchonLocations(enemy)[0])
-								.rotateRightDegrees((float) Math.random() * 60);
-				} else
-					dir = rc.getLocation().directionTo(robot.getLocation()).opposite();
-				// get away from other gardeners or archons in somehow random direction
-				// TODO use constants
-				dir = dir.rotateLeftDegrees((float) Math.random() * 60 - 30);
-				// black dot in debugging
-				rc.setIndicatorDot(rc.getLocation().add(dir), 1, 1, 1);
-				tryMove(dir);
-				return false;
-			}
+		if (roundCounter > TeamConstants.GARDENERS_DIRECT_PATH_LENGTH) {
+			roundCounter = 0;
+			currentDir = randomDirection();
+
 		}
-		return true;
+		boolean rdyToBuild = true;
+		//check for robots
+		for (RobotInfo robot : nearbyRobots)
+			if (robot.getTeam().equals(rc.getTeam()))
+				if (robot.getType().equals(RobotType.GARDENER) || robot.getType().equals(RobotType.ARCHON))
+					rdyToBuild = false;
+		try {
+			if (!rc.onTheMap(rc.getLocation(), radius)) {
+				rdyToBuild = false;
+				roundCounter += 10;
+			}
+		} catch (GameActionException e) {
+			System.out.println("bad radius in find loc function!");
+			rdyToBuild = false;
+		}
+		if (!rdyToBuild)
+			tryMove(currentDir);
+		return rdyToBuild;
 	}
 
 	/**
@@ -65,7 +67,7 @@ public class Gardener extends Robot {
 	 * @return
 	 */
 	boolean findSpot() {
-		return findSpot(6.0f);
+		return findSpot(TeamConstants.GARDENERS_DEFAULT_FREE_SPOT_RADIUS);
 	}
 
 	/**
@@ -75,14 +77,12 @@ public class Gardener extends Robot {
 	 */
 	boolean buildGarden() {
 		boolean ret = false;
-		Direction dir = Direction.WEST;
+		Direction dir = TeamConstants.GARDENERS_GARDEN_ENTRANCE;
 		for (int i = 0; i < 5; i++) {
-			//TODO keep list of planted trees
 			try {
 				if (rc.canPlantTree(dir)) {
 					rc.plantTree(dir);
 					ret = true;
-					//TODO mby break earlier??
 				}
 			} catch (GameActionException e) {
 				//should not happen, mby when we check and plant in different rounds
@@ -96,7 +96,7 @@ public class Gardener extends Robot {
 	 * tries to water all plants around robot. Assuming starting dir is WEST
 	 */
 	void waterGarden() {
-		Direction dir = Direction.WEST;
+		Direction dir = TeamConstants.GARDENERS_GARDEN_ENTRANCE;
 		MapLocation loc = rc.getLocation();
 		for (int i = 0; i < 5; i++) {
 			try {
@@ -120,11 +120,15 @@ public class Gardener extends Robot {
 	 * @param type of robot
 	 * @return if successful
 	 */
-	boolean build(RobotType type) {
-		Direction dir = Direction.WEST.rotateLeftDegrees(60);
+	boolean build(RobotType type, boolean random) {
 		// wait until build is rdy
 		if (!rc.isBuildReady())
 			Clock.yield();
+		Direction dir;
+		if (!random)
+			dir = TeamConstants.GARDENERS_GARDEN_ENTRANCE.rotateLeftDegrees(60);
+		else
+			dir = randomDirection();
 		if (rc.canBuildRobot(type, dir)) {
 			try {
 				rc.buildRobot(type, dir);
@@ -137,30 +141,121 @@ public class Gardener extends Robot {
 		}
 	}
 
-	@Override void step() {
-		// TODO Lukas
+	/**
+	 * assuming were in garden so build direction is NOT random
+	 *
+	 * @param type of robot
+	 * @return if successful
+	 */
+	boolean build(RobotType type) {
+		return build(type, false);
+	}
 
+	/**
+	 * checks whether enemy Archon is nearby,
+	 * used in init phase
+	 *
+	 * @return true if is near
+	 */
+	boolean isEnemyArchonNear() {
+		RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
+		for (RobotInfo robot : nearbyRobots) {
+			if (robot.getType() == RobotType.ARCHON && robot.getTeam() == enemy)
+				return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Checks whether there is a lot (const) trees around
+	 *
+	 * @return true if is more than TeamConstants.GARDENER_NUM_OF_TREES_TO_BUILD_LUMBER
+	 */
+	boolean isInWoods() {
+		TreeInfo[] nearbyTrees = rc.senseNearbyTrees(TeamConstants.GARDENERS_DEFAULT_FREE_SPOT_RADIUS);
+		Integer curr = 0;
+		for (TreeInfo tree : nearbyTrees)
+			if (!tree.getTeam().equals(rc.getTeam()))
+				curr++;
+		if (curr > TeamConstants.GARDENER_NUM_OF_TREES_TO_BUILD_LUMBER)
+			return true;
+		else
+			return false;
+	}
+
+	/**
+	 * States:
+	 *
+	 * STARTING <-> ONLYSOLDIER
+	 * \
+	 * \-----> FINDING <-> LETSCHOP
+	 * 				\
+	 * 				\-----> BUILDING
+	 */
+	@Override void step() {
+		roundCounter++;
 		switch (state) {
+		case STARTING:
+			currentDir = randomDirection();
+			if (isEnemyArchonNear()) {
+				state = GardenerState.ONLYSOLDIERS;
+			} else
+				state = GardenerState.FINDING;
+			break;
 		case FINDING:
-			if (findSpot()) {
+			if (isInWoods() && !lumberjackBuilded) {
+				state = GardenerState.LETSCHOP;
+				lumberjackBuilded = true;
+			} else if (findSpot())
 				state = GardenerState.BUILDING;
-				System.out.println("Gardener ID: " + rc.getID() + " found place to build garden");
-			} else {
-				tryMove(randomDirection());
-			}
 			break;
 		case BUILDING:
+			// try to build one tree in garden
 			buildGarden();
+			// water garden
 			waterGarden();
-			//TODO decide according to game state whether to build lumberjacks,
-			//soldiers or tanks. Logic how many gardeners should be build should be in archon
-			double rnd = Math.random();
-			if (rnd < 0.1)
-				build(RobotType.LUMBERJACK);
-			else if (rnd < 0.9)
+			// force to build robots
+			if (!scoutBuilded) {
+				while (!build(RobotType.SCOUT)) {
+					waterGarden();
+					Clock.yield();
+				}
+				scoutBuilded = true;
+			}
+			else if (!soldierBuilded)
+			{
+				while (!build(RobotType.SOLDIER)) {
+					waterGarden();
+					Clock.yield();
+				}
+				soldierBuilded = true;
+			}
+			// try to build again
+			if (scoutBuilded)
+				build(RobotType.SOLDIER);
+			else {
+				build(RobotType.SCOUT);
+				scoutBuilded = true;
+			}
+			break;
+		case ONLYSOLDIERS:
+			// while enemy archon is nearby build soldiers !!
+			if (isEnemyArchonNear())
 				build(RobotType.SOLDIER);
 			else
-				build(RobotType.SCOUT); //TODO build just one
+				state = GardenerState.FINDING;
+			break;
+		case LETSCHOP:
+			roundCounter = 0;
+			// build atleast one lumberjack and than try to build another in next  rounds
+			for (int i = 0; i < 2; i++) {
+				roundCounter = 0;
+				while (!build(RobotType.LUMBERJACK, true) && (roundCounter < 35 || i == 0)) {
+					roundCounter++;
+					Clock.yield();
+				}
+			}
+			state = GardenerState.FINDING;
 			break;
 		}
 	}
