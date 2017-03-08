@@ -22,7 +22,6 @@ public class Gardener extends Robot {
 
 	GardenerState state = GardenerState.STARTING;
 	Integer roundCounter = 0;
-	Integer stuckCounter = 0;
 	Direction currentDir = randomDirection();
 	Integer lumberjackBuilded = 0;
 	boolean scoutBuilded = false;
@@ -40,9 +39,8 @@ public class Gardener extends Robot {
 		// get robots in radius
 		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(radius);
 
-		if (roundCounter > TeamConstants.GARDENERS_DIRECT_PATH_LENGTH) {
+		if (roundCounter > 100) {
 			roundCounter = 0;
-			stuckCounter++;
 			currentDir = randomDirection();
 		}
 		boolean rdyToBuild = true;
@@ -51,22 +49,38 @@ public class Gardener extends Robot {
 			if (robot.getTeam().equals(rc.getTeam()))
 				if (robot.getType().equals(RobotType.GARDENER) || robot.getType().equals(RobotType.ARCHON))
 					rdyToBuild = false;
-		try {
-			if (!rc.onTheMap(rc.getLocation(), radius)) {
-				rdyToBuild = false;
-				roundCounter += 20;
+		if (!rdyToBuild) {
+			try {
+				if (!rc.onTheMap(rc.getLocation(), radius)) {
+					rdyToBuild = false;
+					roundCounter += 5;
+				}
+
+				boolean success = false;
+				int angle = 10;
+				Direction newWay = currentDir;
+
+				// First, try intended direction
+				if (rc.canMove(currentDir)) {
+					rc.move(currentDir);
+					success = true;
+				}
+				// Now try a bunch of similar angles
+				while (!success) {
+					newWay = currentDir.rotateLeftDegrees(rand.nextInt(angle) - angle / 2);
+					// Try the offset of the left side
+					if (rc.canMove(newWay)) {
+						rc.move(newWay);
+						success = true;
+					}
+					angle += 4;
+				}
+				currentDir = newWay;
+				// A move never happened, so return false.
+			} catch (GameActionException e) {
+				// this can't actually happen since we always ask canMove first
 			}
-		} catch (GameActionException e) {
-			System.out.println("bad radius in find loc function!");
-			rdyToBuild = false;
 		}
-		if (stuckCounter > 5 && !stuck) {
-			currentDir = rc.getLocation().directionTo(rc.getInitialArchonLocations(enemy)[0]);
-			currentDir = currentDir.rotateRightDegrees(rand.nextInt(120) - 60);
-			stuck = true;
-		}
-		if (!rdyToBuild)
-			tryMove(currentDir);
 		return rdyToBuild;
 	}
 
@@ -189,7 +203,10 @@ public class Gardener extends Robot {
 		else
 			return false;
 	}
+	@Override void dodge()
+	{
 
+	}
 	/**
 	 * States:
 	 * <p>

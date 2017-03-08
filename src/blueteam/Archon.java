@@ -39,7 +39,7 @@ public class Archon extends Robot {
 		}
 
 		// we want to preserve some bullet points for gardener
-		if (!canSpent() && getRobotCount(RobotType.GARDENER) > 2) {
+		if (!canSpent() && getRobotCount(RobotType.GARDENER) > 1) {
 			return;
 		}
 
