@@ -15,6 +15,10 @@ public class Archon extends Robot {
 		super(rc);
 	}
 
+	boolean canSpent() {
+		return rc.getTeamBullets() > TeamConstants.MINIMUM_BULLETS_TO_SAVE;
+	}
+
 	@Override
 	void step() throws GameActionException {
 		int numberOfArchons = getRobotCount();
@@ -28,6 +32,17 @@ public class Archon extends Robot {
 			tryMove(randomDirection());
 		}
 
+		// donate all bullets if we can win immediately
+		if (rc.getTeamBullets() / rc.getVictoryPointCost()
+				+ rc.getTeamVictoryPoints() >= GameConstants.VICTORY_POINTS_TO_WIN) {
+			rc.donate(rc.getTeamBullets());
+		}
+
+		// we want to preserve some bullet points for gardener
+		if (!canSpent() && getRobotCount(RobotType.GARDENER) > 0) {
+			return;
+		}
+
 		// randomly attempt to build a gardener if we need more
 		Direction dir = randomDirection();
 		int numOfGardeners = getRobotCount(RobotType.GARDENER);
@@ -37,11 +52,6 @@ public class Archon extends Robot {
 			rc.hireGardener(dir);
 		}
 
-		// donate all bullets if we can win immediately
-		if (rc.getTeamBullets() / rc.getVictoryPointCost()
-				+ rc.getTeamVictoryPoints() >= GameConstants.VICTORY_POINTS_TO_WIN) {
-			rc.donate(rc.getTeamBullets());
-		}
 		// buy some victory points randomly
 		if (Math.random() < 0.05 / numberOfArchons) {
 			rc.donate(rc.getTeamBullets() / 4);
