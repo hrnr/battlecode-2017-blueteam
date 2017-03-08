@@ -30,9 +30,6 @@ public abstract interface TeamConstants {
 	public static final int MINIMUM_BULLETS_TO_SAVE = 300;
 
 	public static final int GARDENERS_DIRECT_PATH_LENGTH = 40;
-	public static final float GARDENERS_DEFAULT_FREE_SPOT_RADIUS = 6.0f;
-
-	public static final int GARDENERS_DIRECT_PATH_LENGTH = 40;
 	public static final float GARDENERS_DEFAULT_FREE_SPOT_RADIUS = 6.5f;
 
 	public static final Direction GARDENERS_GARDEN_ENTRANCE = Direction.WEST;
