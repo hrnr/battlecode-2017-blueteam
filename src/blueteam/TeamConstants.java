@@ -32,5 +32,5 @@ public abstract interface TeamConstants {
 	public static final float GARDENERS_DEFAULT_FREE_SPOT_RADIUS = 6.5f;
 
 	public static final Direction GARDENERS_GARDEN_ENTRANCE = Direction.WEST;
-	public static final int GARDENER_NUM_OF_TREES_TO_BUILD_LUMBER = 10;
+	public static final int GARDENER_NUM_OF_TREES_TO_BUILD_LUMBER = 5;
 }

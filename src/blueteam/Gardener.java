@@ -210,8 +210,7 @@ public class Gardener extends Robot {
 				state = GardenerState.FINDING;
 			break;
 		case FINDING:
-			while (roundCounter < 20)
-			{
+			while (roundCounter < 20) {
 				if (findSpot())
 					state = GardenerState.BUILDING;
 				roundCounter++;
@@ -261,12 +260,9 @@ public class Gardener extends Robot {
 					build(RobotType.LUMBERJACK);
 				else if (getRobotCount(RobotType.SOLDIER) < 40)
 					build(RobotType.SOLDIER);
-			} else if (rnd < 0.75) {
+			} else {
 				if (getRobotCount(RobotType.SOLDIER) < 40)
 					build(RobotType.SOLDIER);
-			} else {
-				if (getRobotCount(RobotType.TANK) < 3)
-					build(RobotType.TANK);
 			}
 
 			break;
