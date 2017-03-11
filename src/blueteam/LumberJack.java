@@ -65,7 +65,7 @@ public class LumberJack extends Robot {
 				tryMove(moveDirection);
 			} else {
 				// two robots are behind each other and both are trying to
-				// access the same tree. This let's them move avoid each other
+				// access the same tree. This let's them avoid each other
 				if (rand.nextFloat() < 0.5)
 					tryMove(moveDirection.rotateLeftDegrees(90));
 				else
@@ -98,23 +98,16 @@ public class LumberJack extends Robot {
 				return;
 			}
 		}
-		// Optional<TreeInfo> nearest = Arrays.stream(trees).filter(x -> x.team
-		// != rc.getTeam()).findFirst();
-		// if (nearest.isPresent()) {
-		// Direction dirToTree =
-		// myLocation.directionTo(nearest.get().getLocation());
-		// tryMove(dirToTree);
-		// rc.setIndicatorDot(myLocation, 0, 255, 0);
-		// return;
-		// }
 		if (rc.hasMoved())
 			return;
 		// No tree in sight -> move randomly or attack:
+		MapLocation oponentInitially = rc.getInitialArchonLocations(rc.getTeam().opponent())[0];
 		if (rc.getRoundNum() > TeamConstants.LUMBERJACK_START_ATTACKING_FROM_ROUND) {
-			if (myLocation.distanceTo(rc.getInitialArchonLocations(rc.getTeam().opponent())[0]) < 3) {
+			if (myLocation.distanceTo(oponentInitially) < TeamConstants.LUMBERJACK_ATTACK_RADIUS) {
 				moveRandomly();
 			} else {
-				moveToTarget(rc.getInitialArchonLocations(rc.getTeam().opponent())[0]);
+				moveToTarget(oponentInitially);
+				moveDirection = myLocation.directionTo(oponentInitially);
 			}
 		} else {
 			moveRandomly();
