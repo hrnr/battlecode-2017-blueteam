@@ -21,9 +21,9 @@ public class Gardener extends Robot {
 	}
 
 	GardenerState state = GardenerState.STARTING;
-	Integer roundCounter = 0;
+	int roundCounter = 0;
 	Direction currentDir = randomDirection();
-	Integer lumberjackBuilded = 0;
+	int lumberjackBuilded = 0;
 	boolean scoutBuilded = false;
 	boolean soldierBuilded = false;
 	boolean stuck = false;
@@ -228,6 +228,7 @@ public class Gardener extends Robot {
 			break;
 		case FINDING:
 			while (roundCounter < 20) {
+				dodge();
 				if (findSpot())
 					state = GardenerState.BUILDING;
 				roundCounter++;
@@ -268,17 +269,17 @@ public class Gardener extends Robot {
 			// try to build again
 			double rnd = rand.nextDouble();
 			if (rnd < 0.25) {
-				if (getRobotCount(RobotType.SCOUT) < 2)
+				if (getRobotCount(RobotType.SCOUT) < TeamConstants.MAX_NUMBER_SCOUTS)
 					build(RobotType.SCOUT);
-				else if (getRobotCount(RobotType.SOLDIER) < 40)
+				else if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS)
 					build(RobotType.SOLDIER);
 			} else if (rnd < 0.5) {
-				if (getRobotCount(RobotType.LUMBERJACK) < 3)
+				if (getRobotCount(RobotType.LUMBERJACK) < TeamConstants.MAX_NUMBER_LUMBERJACKS)
 					build(RobotType.LUMBERJACK);
-				else if (getRobotCount(RobotType.SOLDIER) < 40)
+				else if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS)
 					build(RobotType.SOLDIER);
 			} else {
-				if (getRobotCount(RobotType.SOLDIER) < 40)
+				if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS)
 					build(RobotType.SOLDIER);
 			}
 
