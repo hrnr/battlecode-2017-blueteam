@@ -14,12 +14,12 @@ import battlecode.common.TreeInfo;
 public class Scout extends Robot {
 
 	Direction dir;
-	final int ROTATE_MIN = 30;
-	final int ROTATE_RANGE = 90;
+	Direction enemyDir;
 
 	Scout(RobotController rc) {
 		super(rc);
 		dir = rc.getLocation().directionTo(rc.getInitialArchonLocations(enemy)[0]);
+		enemyDir = dir;
 	}
 
 	Optional<TreeInfo> findBulletTree() {
@@ -38,9 +38,13 @@ public class Scout extends Robot {
 		return Optional.empty();
 	}
 
-	boolean shakeTheTree(TreeInfo tree) throws GameActionException {
+	boolean shakeTheTree(TreeInfo tree) {
 		if (rc.canShake(tree.getLocation())) {
-			rc.shake(tree.getLocation());
+			try {
+				rc.shake(tree.getLocation());
+			} catch (GameActionException e) {
+				e.printStackTrace();
+			}
 			return true;
 		}
 		return false;
@@ -48,40 +52,43 @@ public class Scout extends Robot {
 
 	@Override
 	void step() {
+		if (rc.hasMoved())
+			return;
+
+		Optional<RobotInfo> lumberjack = getNearestRobot(RobotType.LUMBERJACK, rc.getType().sensorRadius / 2f);
+		if (lumberjack.isPresent()) {
+			rc.setIndicatorDot(lumberjack.get().getLocation(), 0, 0, 255);
+			dir = new Direction(rc.getLocation(), lumberjack.get().getLocation()).opposite();
+			dir = randomFreeDirection(dir, TeamConstants.SCOUT_AVOID_LUMBERJACK_RANGE);
+			try {
+				rc.move(dir);
+			} catch (GameActionException e) {
+				e.printStackTrace();
+			}
+			return;
+		}
 		try {
-			boolean danger = false;
-			// avoid lumberjacks
-			Optional<RobotInfo> lumberjack = getNearestRobot(RobotType.LUMBERJACK, rc.getType().sensorRadius / 4);
-			if (lumberjack.isPresent()) {
-				dir = new Direction(rc.getLocation(), lumberjack.get().getLocation()).opposite();
-				if (rand.nextBoolean()) {
-					dir = dir.rotateLeftDegrees(45);
-				} else {
-					dir = dir.rotateRightDegrees(45);
-				}
-				danger = true;
-			}
-			if (!danger) {
-				Optional<TreeInfo> bulletTree = findBulletTree();
-				if (bulletTree.isPresent()) {
-					if (!shakeTheTree(bulletTree.get())) {
-						// we need to get to this tree first
-						MapLocation treeLoc = bulletTree.get().getLocation();
-						if (rc.canMove(treeLoc) == true) {
-							rc.move(treeLoc);
-							return;
-						}
+			Optional<TreeInfo> bulletTree = findBulletTree();
+			if (bulletTree.isPresent()) {
+				if (!shakeTheTree(bulletTree.get())) {
+					// we need to get to this tree first
+					MapLocation treeLoc = bulletTree.get().getLocation();
+					if (rc.canMove(treeLoc) == true) {
+						rc.move(treeLoc);
+						return;
 					}
+				} else {
+					rc.move(randomFreeDirection());
+					return;
 				}
 			}
-
-			// just move in direction
-			if (!tryMove(dir, 20, 1))
-				dir = dir.rotateRightDegrees(rand.nextInt(ROTATE_RANGE) + ROTATE_MIN);
-
 		} catch (GameActionException e) {
-			System.out.println("Scout Exception");
 			e.printStackTrace();
 		}
+
+		// just move in direction
+		if (!tryMove(dir, 20, 1))
+			dir = randomFreeDirection(enemyDir, TeamConstants.SCOUT_MOVEMENT_BLOCKED_DIR_RANGE);
+
 	}
 }

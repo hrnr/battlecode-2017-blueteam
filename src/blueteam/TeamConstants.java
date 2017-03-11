@@ -61,4 +61,7 @@ public abstract interface TeamConstants {
 
 	public static final float LUMBERJACK_ATTACK_RADIUS = 20;
 
+	public static final float SCOUT_AVOID_LUMBERJACK_RANGE = 90;
+	public static final float SCOUT_MOVEMENT_BLOCKED_DIR_RANGE = 180;
+
 }

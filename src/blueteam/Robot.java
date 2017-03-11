@@ -173,6 +173,16 @@ abstract public class Robot {
 		return rndDir;
 	}
 
+	Direction randomFreeDirection(Direction dir, float range) {
+		for (int i = 0; i < TeamConstants.GENERATING_DIR_MAX_TRIES_LIMIT; i++) {
+			float angle = rand.nextFloat() * range - (range / 2);
+			Direction rndDir = dir.rotateRightDegrees(angle);
+			if (rc.canMove(rndDir))
+				return rndDir;
+		}
+		return randomFreeDirection();
+	}
+
 	/**
 	 * Attempts to move in a given direction, while avoiding small obstacles
 	 * directly in the path.
@@ -457,12 +467,12 @@ abstract public class Robot {
 		rc.broadcast(firstChannel + 3, arr[3]);
 	}
 
-	void wander() throws GameActionException {
+	void wander() {
 		Direction dir = randomFreeDirection();
 		tryMove(dir);
 	}
 
-	boolean slugMoveToTarget(MapLocation target, float strideRadius) throws GameActionException {
+	boolean slugMoveToTarget(MapLocation target, float strideRadius) {
 
 		// when trying to move, let's look forward, then incrementing left and
 		// right.
@@ -493,7 +503,11 @@ abstract public class Robot {
 						// whatever you want to use)
 					}
 					if (!rc.hasMoved() && rc.canMove(dirToTry, strideRadius)) {
-						rc.move(dirToTry, strideRadius);
+						try {
+							rc.move(dirToTry, strideRadius);
+						} catch (GameActionException e) {
+							e.printStackTrace();
+						}
 					}
 					return (true);
 				}
@@ -505,7 +519,7 @@ abstract public class Robot {
 
 	}
 
-	boolean moveToTarget(MapLocation location) throws GameActionException {
+	boolean moveToTarget(MapLocation location) {
 		// try to take a big step
 		if (slugMoveToTarget(location, rc.getType().strideRadius)) {
 			return (true);
