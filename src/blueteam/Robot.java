@@ -23,7 +23,12 @@ abstract public class Robot {
 	Team enemy;
 	Random rand;
 	private boolean alive;
+
 	ImportantLocations combatLocations;
+	// this is the slugs "tail" imagine leaving a trail of sticky goo on the map
+	// that you don't want to step in that slowly dissapates over time
+	ArrayList<MapLocation> oldLocations = new ArrayList<>();
+	static boolean swarm = false;
 
 	Robot(RobotController rc) {
 		this.rc = rc;
@@ -400,5 +405,123 @@ abstract public class Robot {
 			return Optional.of(robots.get(0));
 		}
 		return Optional.empty();
+	}
+
+	/**
+	 *
+	 * @param map
+	 *            A MapLocation to convert to integer representation
+	 * @return An array arr such that: arr[0] - integer part of x arr[1] -
+	 *         decimal part of x * 10^6 and rounded arr[2] - integer part of y
+	 *         arr[3] - decimal part of y * 10^6 and rounded
+	 */
+	int[] convertMapLocation(MapLocation map) {
+		float xcoord = map.x;
+		float ycoord = map.y;
+		int[] returnarray = new int[4];
+		returnarray[0] = Math.round(xcoord - (xcoord % 1));
+		returnarray[1] = Math.toIntExact(Math.round((xcoord % 1) * Math.pow(10, 6)));
+		returnarray[2] = Math.round(ycoord - (ycoord % 1));
+		returnarray[3] = Math.toIntExact(Math.round((ycoord % 1) * Math.pow(10, 6)));
+		return (returnarray);
+	}
+
+	/**
+	 *
+	 * @param arr
+	 *            An array arr such that: arr[0] - integer part of x arr[1] -
+	 *            decimal part of x * 10^6 and rounded arr[2] - integer part of
+	 *            y arr[3] - decimal part of y * 10^6 and rounded
+	 * @return A MapLocation instantiated from the coordinates given by array
+	 */
+	MapLocation convertLocationInts(int[] arr) {
+		float xcoord = (float) (arr[0] + arr[1] / Math.pow(10, 6));
+		float ycoord = (float) (arr[2] + arr[3] / Math.pow(10, 6));
+		return (new MapLocation(xcoord, ycoord));
+	}
+
+	MapLocation readLocation(int firstChannel) throws GameActionException {
+		int[] array = new int[4];
+		array[0] = rc.readBroadcast(firstChannel);
+		array[1] = rc.readBroadcast(firstChannel + 1);
+		array[2] = rc.readBroadcast(firstChannel + 2);
+		array[3] = rc.readBroadcast(firstChannel + 3);
+		return convertLocationInts(array);
+	}
+
+	void writeLocation(MapLocation map, int firstChannel) throws GameActionException {
+		int[] arr = convertMapLocation(map);
+		rc.broadcast(firstChannel, arr[0]);
+		rc.broadcast(firstChannel + 1, arr[1]);
+		rc.broadcast(firstChannel + 2, arr[2]);
+		rc.broadcast(firstChannel + 3, arr[3]);
+	}
+
+	void wander() throws GameActionException {
+		Direction dir = randomFreeDirection();
+		tryMove(dir);
+	}
+
+	boolean slugMoveToTarget(MapLocation target, float strideRadius) throws GameActionException {
+
+		// when trying to move, let's look forward, then incrementing left and
+		// right.
+		float[] toTry = { 0, (float) Math.PI / 4, (float) -Math.PI / 4, (float) Math.PI / 2, (float) -Math.PI / 2,
+				3 * (float) Math.PI / 4, -3 * (float) Math.PI / 4, -(float) Math.PI };
+
+		MapLocation ourLoc = rc.getLocation();
+		Direction toMove = ourLoc.directionTo(target);
+
+		// let's try to find a place to move!
+		for (int i = 0; i < toTry.length; i++) {
+			Direction dirToTry = toMove.rotateRightDegrees(toTry[i]);
+			if (rc.canMove(dirToTry, strideRadius)) {
+				// if that location is free, let's see if we've already moved
+				// there before (aka, it's in our tail)
+				MapLocation newLocation = ourLoc.add(dirToTry, strideRadius);
+				boolean haveWeMovedThereBefore = false;
+				for (int j = 0; j < oldLocations.size(); j++) {
+					if (newLocation.distanceTo(oldLocations.get(j)) < strideRadius * strideRadius) {
+						haveWeMovedThereBefore = true;
+						break;
+					}
+				}
+				if (!haveWeMovedThereBefore) {
+					oldLocations.add(newLocation);
+					if (oldLocations.size() > 10) {
+						// remove the head and chop the list down to size 10 (or
+						// whatever you want to use)
+					}
+					if (!rc.hasMoved() && rc.canMove(dirToTry, strideRadius)) {
+						rc.move(dirToTry, strideRadius);
+					}
+					return (true);
+				}
+
+			}
+		}
+		// looks like we can't move anywhere
+		return (false);
+
+	}
+
+	boolean moveToTarget(MapLocation location) throws GameActionException {
+		// try to take a big step
+		if (slugMoveToTarget(location, rc.getType().strideRadius)) {
+			return (true);
+		}
+		// try to take a smaller step
+		if (slugMoveToTarget(location, rc.getType().strideRadius / 2)) {
+			return (true);
+		}
+		// try to take a baby step
+		if (slugMoveToTarget(location, rc.getType().strideRadius / 4)) {
+			return (true);
+		} else {
+			wander();
+			return (false);
+		}
+		// insert move randomly code here
+
 	}
 }

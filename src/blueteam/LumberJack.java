@@ -88,24 +88,52 @@ public class LumberJack extends Robot {
 		}
 
 		// no tree can be chopped -> go to the nearest (enemy) tree:
-		Optional<TreeInfo> nearest = Arrays.stream(trees).filter(x -> x.team != rc.getTeam()).findFirst();
-		if (nearest.isPresent()) {
-			Direction dirToTree = myLocation.directionTo(nearest.get().getLocation());
-			tryMove(dirToTree);
-			rc.setIndicatorDot(myLocation, 0, 255, 0);
-			return;
+		for (TreeInfo tree : trees) {
+			if (tree.getTeam() == rc.getTeam())
+				continue;
+			Direction dirToTree = myLocation.directionTo(tree.getLocation());
+			if (rc.canMove(dirToTree)) {
+				tryMove(dirToTree);
+				rc.setIndicatorDot(tree.getLocation(), 0, 255, 0);
+				return;
+			}
 		}
+		// Optional<TreeInfo> nearest = Arrays.stream(trees).filter(x -> x.team
+		// != rc.getTeam()).findFirst();
+		// if (nearest.isPresent()) {
+		// Direction dirToTree =
+		// myLocation.directionTo(nearest.get().getLocation());
+		// tryMove(dirToTree);
+		// rc.setIndicatorDot(myLocation, 0, 255, 0);
+		// return;
+		// }
 		if (rc.hasMoved())
 			return;
-		// No tree in sight -> move randomly:
+		// No tree in sight -> move randomly or attack:
+		if (rc.getRoundNum() > TeamConstants.LUMBERJACK_START_ATTACKING_FROM_ROUND) {
+			if (myLocation.distanceTo(rc.getInitialArchonLocations(rc.getTeam().opponent())[0]) < 3) {
+				moveRandomly();
+			} else {
+				moveToTarget(rc.getInitialArchonLocations(rc.getTeam().opponent())[0]);
+			}
+		} else {
+			moveRandomly();
+		}
+
+	}
+
+	void moveRandomly() {
 		if (!rc.canMove(moveDirection, rc.getType().strideRadius / 2)) {
 			moveDirection = randomFreeDirection();
 		}
 		if (!tryMove(moveDirection)) {
 			if (rc.canMove(moveDirection, rc.getType().strideRadius / 2))
-				rc.move(moveDirection, rc.getType().strideRadius / 2);
+				try {
+					rc.move(moveDirection, rc.getType().strideRadius / 2);
+				} catch (GameActionException e) {
+					e.printStackTrace();
+				}
 		}
-
 	}
 
 }
