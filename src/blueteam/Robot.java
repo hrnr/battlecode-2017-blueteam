@@ -1,5 +1,6 @@
 package blueteam;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
@@ -27,7 +28,7 @@ abstract public class Robot {
 	ImportantLocations combatLocations;
 	// this is the slugs "tail" imagine leaving a trail of sticky goo on the map
 	// that you don't want to step in that slowly dissapates over time
-	ArrayList<MapLocation> oldLocations = new ArrayList<>();
+	ArrayDeque<MapLocation> oldLocations = new ArrayDeque<>();
 	static boolean swarm = false;
 
 	Robot(RobotController rc) {
@@ -490,17 +491,16 @@ abstract public class Robot {
 				// there before (aka, it's in our tail)
 				MapLocation newLocation = ourLoc.add(dirToTry, strideRadius);
 				boolean haveWeMovedThereBefore = false;
-				for (int j = 0; j < oldLocations.size(); j++) {
-					if (newLocation.distanceTo(oldLocations.get(j)) < strideRadius * strideRadius) {
+				for (MapLocation loc : oldLocations) {
+					if (newLocation.distanceTo(loc) < strideRadius * strideRadius) {
 						haveWeMovedThereBefore = true;
 						break;
 					}
 				}
 				if (!haveWeMovedThereBefore) {
-					oldLocations.add(newLocation);
+					oldLocations.addLast(newLocation);
 					if (oldLocations.size() > 10) {
-						// remove the head and chop the list down to size 10 (or
-						// whatever you want to use)
+						oldLocations.removeFirst();
 					}
 					if (!rc.hasMoved() && rc.canMove(dirToTry, strideRadius)) {
 						try {
