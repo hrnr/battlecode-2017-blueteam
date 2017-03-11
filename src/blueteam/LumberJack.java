@@ -3,6 +3,7 @@ package blueteam;
 import java.util.Arrays;
 import java.util.Optional;
 
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
@@ -32,18 +33,44 @@ public class LumberJack extends Robot {
 		moveDirection = randomDirection();
 	}
 
+	boolean friendlyStrikeDamage() {
+		return rc.senseNearbyRobots(GameConstants.LUMBERJACK_STRIKE_RADIUS, rc.getTeam()).length == 0 ? false : true;
+	}
+
+	boolean strikeNearRobot(RobotInfo[] robots) {
+		if (robots.length > 0 && !rc.hasAttacked()) {
+			// Avoid friendly fire
+			// friendly trees can be damaged if we can potentially kill enemy
+			if (!friendlyStrikeDamage()) {
+				try {
+					rc.strike();
+				} catch (GameActionException e) {
+					// this should never happen
+					e.printStackTrace();
+				}
+				return true;
+			} else {
+				Direction dir = moveDirection.opposite();
+				int count = 0;
+				while (count < 5) {
+					rc.setIndicatorDot(rc.getLocation(), 100, 255, 0);
+					tryMove(dir);
+					dir = randomFreeDirection(moveDirection, 180);
+					Clock.yield();
+					count++;
+				}
+
+			}
+		}
+		return false;
+	}
+
 	@Override
 	void step() throws GameActionException {
-		// See if there are any enemy robots within striking range
-		// (distance 1 from lumberjack's radius)
-		Optional<RobotInfo> robots = Arrays.stream(rc.senseNearbyRobots(GameConstants.LUMBERJACK_STRIKE_RADIUS, enemy))
-				.findFirst();
 		MapLocation myLocation = rc.getLocation();
-		if (robots.isPresent() && !rc.hasAttacked()) {
-			// Use strike() to hit all nearby robots!
-			rc.strike();
-			return;
-		}
+		RobotInfo[] robots = rc.senseNearbyRobots(GameConstants.LUMBERJACK_STRIKE_RADIUS, enemy);
+		// See if there are any enemy robots within striking range
+		strikeNearRobot(robots);
 
 		TreeInfo[] trees = rc.senseNearbyTrees();
 
@@ -76,12 +103,12 @@ public class LumberJack extends Robot {
 		}
 
 		// No close robots, so search for robots within sight radius
-		robots = Arrays.stream(rc.senseNearbyRobots(-1, enemy))
+		Optional<RobotInfo> nearRobot = Arrays.stream(rc.senseNearbyRobots(-1, enemy))
 				.filter(robot -> robot.getType() != RobotType.SOLDIER && robot.getType() != RobotType.TANK).findFirst();
 		// If there is a robot, move towards it
-		if (robots.isPresent()) {
+		if (nearRobot.isPresent()) {
 
-			MapLocation enemyLocation = robots.get().getLocation();
+			MapLocation enemyLocation = nearRobot.get().getLocation();
 			Direction toEnemy = myLocation.directionTo(enemyLocation);
 			if (tryMove(toEnemy))
 				return;
