@@ -7,6 +7,7 @@ import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import battlecode.common.Team;
 import battlecode.common.TreeInfo;
 
 public class Gardener extends Robot {
@@ -20,11 +21,13 @@ public class Gardener extends Robot {
 	}
 
 	GardenerState state = GardenerState.STARTING;
-	Integer roundCounter = 0;
+	int roundCounter = 0;
 	Direction currentDir = randomDirection();
-	boolean lumberjackBuilded = false;
+	int lumberjackBuilded = 0;
 	boolean scoutBuilded = false;
 	boolean soldierBuilded = false;
+	boolean stuck = false;
+	int initTreeNum = 0;
 
 	/**
 	 * Searches for suitable location to start building hexagonal tree garden
@@ -35,10 +38,10 @@ public class Gardener extends Robot {
 	boolean findSpot(float radius) {
 		// get robots in radius
 		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(radius);
-		if (roundCounter > TeamConstants.GARDENERS_DIRECT_PATH_LENGTH) {
+
+		if (roundCounter > 100) {
 			roundCounter = 0;
 			currentDir = randomDirection();
-
 		}
 		boolean rdyToBuild = true;
 		//check for robots
@@ -46,17 +49,38 @@ public class Gardener extends Robot {
 			if (robot.getTeam().equals(rc.getTeam()))
 				if (robot.getType().equals(RobotType.GARDENER) || robot.getType().equals(RobotType.ARCHON))
 					rdyToBuild = false;
-		try {
-			if (!rc.onTheMap(rc.getLocation(), radius)) {
-				rdyToBuild = false;
-				roundCounter += 10;
+		if (!rdyToBuild) {
+			try {
+				if (!rc.onTheMap(rc.getLocation(), radius)) {
+					rdyToBuild = false;
+					roundCounter += 5;
+				}
+
+				boolean success = false;
+				int angle = 10;
+				Direction newWay = currentDir;
+
+				// First, try intended direction
+				if (rc.canMove(currentDir)) {
+					rc.move(currentDir);
+					success = true;
+				}
+				// Now try a bunch of similar angles
+				while (!success) {
+					newWay = currentDir.rotateLeftDegrees(rand.nextInt(angle) - angle / 2);
+					// Try the offset of the left side
+					if (rc.canMove(newWay)) {
+						rc.move(newWay);
+						success = true;
+					}
+					angle += 4;
+				}
+				currentDir = newWay;
+				// A move never happened, so return false.
+			} catch (GameActionException e) {
+				// this can't actually happen since we always ask canMove first
 			}
-		} catch (GameActionException e) {
-			System.out.println("bad radius in find loc function!");
-			rdyToBuild = false;
 		}
-		if (!rdyToBuild)
-			tryMove(currentDir);
 		return rdyToBuild;
 	}
 
@@ -172,25 +196,25 @@ public class Gardener extends Robot {
 	 * @return true if is more than TeamConstants.GARDENER_NUM_OF_TREES_TO_BUILD_LUMBER
 	 */
 	boolean isInWoods() {
-		TreeInfo[] nearbyTrees = rc.senseNearbyTrees(TeamConstants.GARDENERS_DEFAULT_FREE_SPOT_RADIUS);
-		Integer curr = 0;
-		for (TreeInfo tree : nearbyTrees)
-			if (!tree.getTeam().equals(rc.getTeam()))
-				curr++;
-		if (curr > TeamConstants.GARDENER_NUM_OF_TREES_TO_BUILD_LUMBER)
+		TreeInfo[] nearbyTrees = rc.senseNearbyTrees(TeamConstants.GARDENERS_DEFAULT_FREE_SPOT_RADIUS, Team.NEUTRAL);
+		System.out.println(nearbyTrees.length);
+		if (nearbyTrees.length > TeamConstants.GARDENER_NUM_OF_TREES_TO_BUILD_LUMBER)
 			return true;
 		else
 			return false;
 	}
+	@Override void dodge()
+	{
 
+	}
 	/**
 	 * States:
-	 *
+	 * <p>
 	 * STARTING <-> ONLYSOLDIER
 	 * \
 	 * \-----> FINDING <-> LETSCHOP
-	 * 				\
-	 * 				\-----> BUILDING
+	 * \
+	 * \-----> BUILDING
 	 */
 	@Override void step() {
 		roundCounter++;
@@ -203,40 +227,62 @@ public class Gardener extends Robot {
 				state = GardenerState.FINDING;
 			break;
 		case FINDING:
-			if (isInWoods() && !lumberjackBuilded) {
+			while (roundCounter < 20) {
+				dodge();
+				if (findSpot())
+					state = GardenerState.BUILDING;
+				roundCounter++;
+				Clock.yield();
+			}
+			if (isInWoods() && lumberjackBuilded < 1) {
 				state = GardenerState.LETSCHOP;
-				lumberjackBuilded = true;
+				lumberjackBuilded++;
 			} else if (findSpot())
 				state = GardenerState.BUILDING;
 			break;
 		case BUILDING:
 			// try to build one tree in garden
-			buildGarden();
+			if (buildGarden())
+				initTreeNum++;
 			// water garden
 			waterGarden();
+			//build atleast 3 trees
+			if (initTreeNum < 3)
+				break;
 			// force to build robots
-			if (!scoutBuilded) {
+			if (!scoutBuilded && getRobotCount(RobotType.SCOUT) == 0) {
 				while (!build(RobotType.SCOUT)) {
 					waterGarden();
 					Clock.yield();
 				}
 				scoutBuilded = true;
-			}
-			else if (!soldierBuilded)
-			{
+			} else if (!soldierBuilded) {
 				while (!build(RobotType.SOLDIER)) {
 					waterGarden();
 					Clock.yield();
 				}
 				soldierBuilded = true;
 			}
-			// try to build again
-			if (scoutBuilded)
+			if (filterByType(rc.senseNearbyRobots(TeamConstants.GARDENERS_DEFAULT_FREE_SPOT_RADIUS, enemy),
+					RobotType.SOLDIER).size() > 0)
 				build(RobotType.SOLDIER);
-			else {
-				build(RobotType.SCOUT);
-				scoutBuilded = true;
+			// try to build again
+			double rnd = rand.nextDouble();
+			if (rnd < 0.25) {
+				if (getRobotCount(RobotType.SCOUT) < TeamConstants.MAX_NUMBER_SCOUTS)
+					build(RobotType.SCOUT);
+				else if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS)
+					build(RobotType.SOLDIER);
+			} else if (rnd < 0.5) {
+				if (getRobotCount(RobotType.LUMBERJACK) < TeamConstants.MAX_NUMBER_LUMBERJACKS)
+					build(RobotType.LUMBERJACK);
+				else if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS)
+					build(RobotType.SOLDIER);
+			} else {
+				if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS)
+					build(RobotType.SOLDIER);
 			}
+
 			break;
 		case ONLYSOLDIERS:
 			// while enemy archon is nearby build soldiers !!
@@ -246,14 +292,9 @@ public class Gardener extends Robot {
 				state = GardenerState.FINDING;
 			break;
 		case LETSCHOP:
-			roundCounter = 0;
 			// build atleast one lumberjack and than try to build another in next  rounds
-			for (int i = 0; i < 2; i++) {
-				roundCounter = 0;
-				while (!build(RobotType.LUMBERJACK, true) && (roundCounter < 35 || i == 0)) {
-					roundCounter++;
-					Clock.yield();
-				}
+			while (!build(RobotType.LUMBERJACK, true)) {
+				Clock.yield();
 			}
 			state = GardenerState.FINDING;
 			break;

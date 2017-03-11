@@ -34,6 +34,9 @@ abstract public class Robot {
 			checkHealth();
 			dodge();
 			step();
+			if (getRobotCount(RobotType.ARCHON) == 0)
+				if (rc.getTeamBullets() > 900)
+					rc.donate(rc.getVictoryPointCost());
 			Clock.yield();
 		}
 	}
