@@ -51,5 +51,8 @@ public abstract interface TeamConstants {
 	 * get closer than this distance (reason: have enough time to dodge).
 	 */
 	public static final int MAX_SOLDIER_TO_SOLDIER_DISTANCE = 5;
+	/**
+	 * Used channels: currently 100 - 115, reserved channels 100 - 130
+	 */
 	public static final int COMBAT_LOCATIONS_FIRST_CHANNEL = 100;
 }
