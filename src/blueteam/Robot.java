@@ -1,10 +1,10 @@
 package blueteam;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Predicate;
 
 import battlecode.common.BodyInfo;
 import battlecode.common.BulletInfo;
@@ -21,6 +21,7 @@ import battlecode.common.TreeInfo;
 
 abstract public class Robot {
 	RobotController rc;
+	Navigation nav;
 	Team enemy;
 	Random rand;
 	private boolean alive;
@@ -28,11 +29,10 @@ abstract public class Robot {
 	ImportantLocations combatLocations;
 	// this is the slugs "tail" imagine leaving a trail of sticky goo on the map
 	// that you don't want to step in that slowly dissapates over time
-	ArrayDeque<MapLocation> oldLocations = new ArrayDeque<>();
-	static boolean swarm = false;
 
 	Robot(RobotController rc) {
 		this.rc = rc;
+		nav = new Navigation(this, rc);
 		enemy = rc.getTeam().opponent();
 		rand = new Random();
 		combatLocations = new ImportantLocations(rc, TeamConstants.COMBAT_LOCATIONS_FIRST_CHANNEL);
@@ -164,7 +164,7 @@ abstract public class Robot {
 	 *
 	 * @return
 	 */
-	protected Direction randomFreeDirection() {
+	public Direction randomFreeDirection() {
 		Direction rndDir = null;
 		for (int i = 0; i < TeamConstants.GENERATING_DIR_MAX_TRIES_LIMIT; i++) {
 			rndDir = randomDirection();
@@ -240,7 +240,7 @@ abstract public class Robot {
 			// A move never happened, so return false.
 			return false;
 		} catch (GameActionException e) {
-			// this can't actually happen since we always ask canMove first
+			e.printStackTrace();
 			return false;
 		}
 	}
@@ -408,6 +408,16 @@ abstract public class Robot {
 		return res;
 	}
 
+	ArrayList<TreeInfo> filterTreeBy(TreeInfo[] trees, Predicate<TreeInfo> cond) {
+		ArrayList<TreeInfo> res = new ArrayList<>();
+		for (TreeInfo tree : trees) {
+			if (cond.test(tree)) {
+				res.add(tree);
+			}
+		}
+		return res;
+	}
+
 	Optional<RobotInfo> getNearestRobot(RobotType type, float maxRadius) {
 		RobotInfo[] close_enemies = rc.senseNearbyRobots(maxRadius, enemy);
 		ArrayList<RobotInfo> robots = filterByType(close_enemies, type);
@@ -422,41 +432,31 @@ abstract public class Robot {
 	 *
 	 * @param map
 	 *            A MapLocation to convert to integer representation
-	 * @return An array arr such that: arr[0] - integer part of x arr[1] -
-	 *         decimal part of x * 10^6 and rounded arr[2] - integer part of y
-	 *         arr[3] - decimal part of y * 10^6 and rounded
+	 * @return An array arr such that: arr[0] - x coordinate in IntBits format,
+	 *         arr[1] - y coordinate in IntBits format
 	 */
 	int[] convertMapLocation(MapLocation map) {
-		float xcoord = map.x;
-		float ycoord = map.y;
-		int[] returnarray = new int[4];
-		returnarray[0] = Math.round(xcoord - (xcoord % 1));
-		returnarray[1] = Math.toIntExact(Math.round((xcoord % 1) * Math.pow(10, 6)));
-		returnarray[2] = Math.round(ycoord - (ycoord % 1));
-		returnarray[3] = Math.toIntExact(Math.round((ycoord % 1) * Math.pow(10, 6)));
-		return (returnarray);
+		int[] returnarray = new int[2];
+		returnarray[0] = Float.floatToIntBits(map.x);
+		returnarray[1] = Float.floatToIntBits(map.y);
+		return returnarray;
 	}
 
 	/**
 	 *
 	 * @param arr
-	 *            An array arr such that: arr[0] - integer part of x arr[1] -
-	 *            decimal part of x * 10^6 and rounded arr[2] - integer part of
-	 *            y arr[3] - decimal part of y * 10^6 and rounded
+	 *            An array arr such that: arr[0] - x coordinate in IntBits
+	 *            format, arr[1] - y coordinate in IntBits format
 	 * @return A MapLocation instantiated from the coordinates given by array
 	 */
 	MapLocation convertLocationInts(int[] arr) {
-		float xcoord = (float) (arr[0] + arr[1] / Math.pow(10, 6));
-		float ycoord = (float) (arr[2] + arr[3] / Math.pow(10, 6));
-		return (new MapLocation(xcoord, ycoord));
+		return new MapLocation(Float.intBitsToFloat(arr[0]), Float.intBitsToFloat(arr[1]));
 	}
 
 	MapLocation readLocation(int firstChannel) throws GameActionException {
-		int[] array = new int[4];
+		int[] array = new int[2];
 		array[0] = rc.readBroadcast(firstChannel);
 		array[1] = rc.readBroadcast(firstChannel + 1);
-		array[2] = rc.readBroadcast(firstChannel + 2);
-		array[3] = rc.readBroadcast(firstChannel + 3);
 		return convertLocationInts(array);
 	}
 
@@ -464,78 +464,5 @@ abstract public class Robot {
 		int[] arr = convertMapLocation(map);
 		rc.broadcast(firstChannel, arr[0]);
 		rc.broadcast(firstChannel + 1, arr[1]);
-		rc.broadcast(firstChannel + 2, arr[2]);
-		rc.broadcast(firstChannel + 3, arr[3]);
-	}
-
-	void wander() {
-		Direction dir = randomFreeDirection();
-		tryMove(dir);
-	}
-
-	boolean slugMoveToTarget(MapLocation target, float strideRadius) {
-
-		// when trying to move, let's look forward, then incrementing left and
-		// right.
-		float[] toTry = { 0, (float) Math.PI / 4, (float) -Math.PI / 4, (float) Math.PI / 2, (float) -Math.PI / 2,
-				3 * (float) Math.PI / 4, -3 * (float) Math.PI / 4, -(float) Math.PI };
-
-		MapLocation ourLoc = rc.getLocation();
-		Direction toMove = ourLoc.directionTo(target);
-
-		// let's try to find a place to move!
-		for (int i = 0; i < toTry.length; i++) {
-			Direction dirToTry = toMove.rotateRightDegrees(toTry[i]);
-			if (rc.canMove(dirToTry, strideRadius)) {
-				// if that location is free, let's see if we've already moved
-				// there before (aka, it's in our tail)
-				MapLocation newLocation = ourLoc.add(dirToTry, strideRadius);
-				boolean haveWeMovedThereBefore = false;
-				for (MapLocation loc : oldLocations) {
-					if (newLocation.distanceTo(loc) < strideRadius * strideRadius) {
-						haveWeMovedThereBefore = true;
-						break;
-					}
-				}
-				if (!haveWeMovedThereBefore) {
-					oldLocations.addLast(newLocation);
-					if (oldLocations.size() > 10) {
-						oldLocations.removeFirst();
-					}
-					if (!rc.hasMoved() && rc.canMove(dirToTry, strideRadius)) {
-						try {
-							rc.move(dirToTry, strideRadius);
-						} catch (GameActionException e) {
-							e.printStackTrace();
-						}
-					}
-					return (true);
-				}
-
-			}
-		}
-		// looks like we can't move anywhere
-		return (false);
-
-	}
-
-	boolean moveToTarget(MapLocation location) {
-		// try to take a big step
-		if (slugMoveToTarget(location, rc.getType().strideRadius)) {
-			return (true);
-		}
-		// try to take a smaller step
-		if (slugMoveToTarget(location, rc.getType().strideRadius / 2)) {
-			return (true);
-		}
-		// try to take a baby step
-		if (slugMoveToTarget(location, rc.getType().strideRadius / 4)) {
-			return (true);
-		} else {
-			wander();
-			return (false);
-		}
-		// insert move randomly code here
-
 	}
 }

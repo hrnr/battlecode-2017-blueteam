@@ -28,7 +28,7 @@ public class Scout extends Robot {
 			// res = Optional.of(trees[trees.length -1]);
 			for (TreeInfo tree : trees) {
 				if (tree.containedBullets > 0) {
-					rc.setIndicatorDot(tree.getLocation(), 250, 0, 0);
+					// rc.setIndicatorDot(tree.getLocation(), 250, 0, 0);
 					if (rc.canMove(tree.getLocation())) {
 						return Optional.of(tree);
 					}
@@ -57,7 +57,7 @@ public class Scout extends Robot {
 
 		Optional<RobotInfo> lumberjack = getNearestRobot(RobotType.LUMBERJACK, rc.getType().sensorRadius / 2f);
 		if (lumberjack.isPresent()) {
-			rc.setIndicatorDot(lumberjack.get().getLocation(), 0, 0, 255);
+			// rc.setIndicatorDot(lumberjack.get().getLocation(), 0, 0, 255);
 			dir = new Direction(rc.getLocation(), lumberjack.get().getLocation()).opposite();
 			dir = randomFreeDirection(dir, TeamConstants.SCOUT_AVOID_LUMBERJACK_RANGE);
 			try {

@@ -1,9 +1,10 @@
 package blueteam;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.function.Predicate;
 
-import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
@@ -27,10 +28,16 @@ import battlecode.common.TreeInfo;
 public class LumberJack extends Robot {
 
 	private Direction moveDirection;
+	boolean avoidingFriendlyHit;
+	int counter;
+	MapLocation enemyLocation;
 
 	LumberJack(RobotController rc) {
 		super(rc);
 		moveDirection = randomDirection();
+		avoidingFriendlyHit = false;
+		counter = 0;
+		enemyLocation = rc.getInitialArchonLocations(rc.getTeam().opponent())[0];
 	}
 
 	boolean friendlyStrikeDamage() {
@@ -42,6 +49,7 @@ public class LumberJack extends Robot {
 			// Avoid friendly fire
 			// friendly trees can be damaged if we can potentially kill enemy
 			if (!friendlyStrikeDamage()) {
+				avoidingFriendlyHit = false;
 				try {
 					rc.strike();
 				} catch (GameActionException e) {
@@ -50,19 +58,19 @@ public class LumberJack extends Robot {
 				}
 				return true;
 			} else {
-				Direction dir = moveDirection.opposite();
-				int count = 0;
-				while (count < 5) {
-					rc.setIndicatorDot(rc.getLocation(), 100, 255, 0);
-					tryMove(dir);
-					dir = randomFreeDirection(moveDirection, 180);
-					Clock.yield();
-					count++;
-				}
+				avoidingFriendlyHit = true;
+				moveDirection = randomFreeDirection(moveDirection.opposite(), 180);
+				return false;
 
 			}
+
 		}
 		return false;
+
+	}
+
+	boolean isAttackTime() {
+		return rc.getRoundNum() > TeamConstants.LUMBERJACK_START_ATTACKING_FROM_ROUND;
 	}
 
 	@Override
@@ -70,9 +78,30 @@ public class LumberJack extends Robot {
 		MapLocation myLocation = rc.getLocation();
 		RobotInfo[] robots = rc.senseNearbyRobots(GameConstants.LUMBERJACK_STRIKE_RADIUS, enemy);
 		// See if there are any enemy robots within striking range
-		strikeNearRobot(robots);
+		if (strikeNearRobot(robots))
+			return;
+
+		if (avoidingFriendlyHit) {
+			// rc.setIndicatorDot(rc.getLocation(), 100, 255, 0);
+			if (tryMove(moveDirection))
+				moveDirection = randomFreeDirection(moveDirection, 180);
+			if (counter > 4) {
+				avoidingFriendlyHit = false;
+				counter = 0;
+			}
+			++counter;
+			return;
+		}
 
 		TreeInfo[] trees = rc.senseNearbyTrees();
+		// priority has a enemy tree
+		Optional<TreeInfo> nearEnemyTree = Arrays.stream(trees).filter(tree -> tree.getTeam() == enemy).findFirst();
+		if (nearEnemyTree.isPresent()) {
+			if (rc.canChop(nearEnemyTree.get().ID)) {
+				rc.chop(nearEnemyTree.get().ID);
+				return;
+			}
+		}
 
 		for (TreeInfo treeInfo : trees) {
 			if (rc.canChop(treeInfo.ID) && treeInfo.team != rc.getTeam()) {
@@ -85,19 +114,10 @@ public class LumberJack extends Robot {
 		// down this tree.
 		Optional<TreeInfo> bonusTree = Arrays.stream(trees).filter(tree -> tree.getContainedRobot() != null)
 				.findFirst();
-		if (bonusTree.isPresent()) {
+		if (bonusTree.isPresent() && !isAttackTime()) {
 			moveDirection = myLocation.directionTo(bonusTree.get().getLocation());
-			rc.setIndicatorDot(myLocation, 255, 0, 0);
-			if (rc.canMove(moveDirection)) {
-				tryMove(moveDirection);
-			} else {
-				// two robots are behind each other and both are trying to
-				// access the same tree. This let's them avoid each other
-				if (rand.nextFloat() < 0.5)
-					tryMove(moveDirection.rotateLeftDegrees(90));
-				else
-					tryMove(moveDirection.rotateRightDegrees(90));
-			}
+			// rc.setIndicatorDot(myLocation, 255, 0, 0);
+			nav.moveToTarget(bonusTree.get().getLocation());
 			return;
 
 		}
@@ -113,28 +133,47 @@ public class LumberJack extends Robot {
 			if (tryMove(toEnemy))
 				return;
 		}
+		if (rc.hasMoved())
+			return;
 
+		// define predicates for tree filtering
+		Predicate<TreeInfo> isEnemyTree = tree -> tree.getTeam() == enemy;
+		Predicate<TreeInfo> isOurTree = tree -> tree.getTeam() == rc.getTeam();
+		Predicate<TreeInfo> isInEnemyDir = tree -> {
+			Direction treeDir = rc.getLocation().directionTo(tree.getLocation());
+			float deltaAngle = Math.abs(treeDir.degreesBetween(rc.getLocation().directionTo(enemyLocation)));
+			return (deltaAngle < 45);
+		};
+
+		ArrayList<TreeInfo> filteredTrees = new ArrayList<>();
+		if (isAttackTime()) {
+			filteredTrees = filterTreeBy(trees, isEnemyTree);
+			if (filteredTrees.size() == 0) {
+				filteredTrees = filterTreeBy(trees, isInEnemyDir.and(isOurTree.negate()));
+			}
+		} else {
+			if (filteredTrees.size() == 0) {
+				filteredTrees = filterTreeBy(trees, isOurTree.negate());
+			}
+		}
 		// no tree can be chopped -> go to the nearest (enemy) tree:
-		for (TreeInfo tree : trees) {
-			if (tree.getTeam() == rc.getTeam())
-				continue;
+		for (TreeInfo tree : filteredTrees) {
 			Direction dirToTree = myLocation.directionTo(tree.getLocation());
-			if (rc.canMove(dirToTree)) {
-				tryMove(dirToTree);
-				rc.setIndicatorDot(tree.getLocation(), 0, 255, 0);
+			if (rc.canMove(dirToTree, rc.getType().strideRadius)) {
+				rc.move(dirToTree, rc.getType().strideRadius);
+				// rc.setIndicatorDot(tree.getLocation(), 0, 255, 0);
 				return;
 			}
 		}
 		if (rc.hasMoved())
 			return;
 		// No tree in sight -> move randomly or attack:
-		MapLocation oponentInitially = rc.getInitialArchonLocations(rc.getTeam().opponent())[0];
-		if (rc.getRoundNum() > TeamConstants.LUMBERJACK_START_ATTACKING_FROM_ROUND) {
-			if (myLocation.distanceTo(oponentInitially) < TeamConstants.LUMBERJACK_ATTACK_RADIUS) {
+		if (isAttackTime()) {
+			if (myLocation.distanceTo(enemyLocation) < TeamConstants.LUMBERJACK_ATTACK_RADIUS) {
 				moveRandomly();
 			} else {
-				moveToTarget(oponentInitially);
-				moveDirection = myLocation.directionTo(oponentInitially);
+				nav.moveToTarget(enemyLocation);
+				moveDirection = myLocation.directionTo(enemyLocation);
 			}
 		} else {
 			moveRandomly();
@@ -143,6 +182,7 @@ public class LumberJack extends Robot {
 	}
 
 	void moveRandomly() {
+		// rc.setIndicatorDot(rc.getLocation(), 0, 0, 0);
 		if (!rc.canMove(moveDirection, rc.getType().strideRadius / 2)) {
 			moveDirection = randomFreeDirection();
 		}
