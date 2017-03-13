@@ -31,12 +31,14 @@ abstract public class Robot {
 
 	void run() throws GameActionException {
 		while (true) {
-			checkHealth();
-			dodge();
-			step();
-			if (getRobotCount(RobotType.ARCHON) == 0)
-				if (rc.getTeamBullets() > 900)
-					rc.donate(rc.getVictoryPointCost());
+			try {
+				checkHealth();
+				buyVictoryPoints();
+				dodge();
+				step();
+			} catch (GameActionException e) {
+				e.printStackTrace();
+			}
 			Clock.yield();
 		}
 	}
