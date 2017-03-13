@@ -26,7 +26,8 @@ public abstract interface TeamConstants {
 	 * are reserved for this.
 	 */
 	public static final int ROBOT_COUNTERS_BEGIN = 0;
-	public static final int MINIMUM_BULLETS_TO_SAVE = 150;
+	public static final int MINIMUM_BULLETS_TO_SAVE = 200;
+	public static final int MAXIMUM_BULLETS_TO_SAVE = 500;
 
 	public static final int GARDENERS_DIRECT_PATH_LENGTH = 30;
 	public static final float GARDENERS_DEFAULT_FREE_SPOT_RADIUS = 6.5f;
