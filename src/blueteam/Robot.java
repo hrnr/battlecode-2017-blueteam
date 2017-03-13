@@ -427,42 +427,4 @@ abstract public class Robot {
 		}
 		return Optional.empty();
 	}
-
-	/**
-	 *
-	 * @param map
-	 *            A MapLocation to convert to integer representation
-	 * @return An array arr such that: arr[0] - x coordinate in IntBits format,
-	 *         arr[1] - y coordinate in IntBits format
-	 */
-	int[] convertMapLocation(MapLocation map) {
-		int[] returnarray = new int[2];
-		returnarray[0] = Float.floatToIntBits(map.x);
-		returnarray[1] = Float.floatToIntBits(map.y);
-		return returnarray;
-	}
-
-	/**
-	 *
-	 * @param arr
-	 *            An array arr such that: arr[0] - x coordinate in IntBits
-	 *            format, arr[1] - y coordinate in IntBits format
-	 * @return A MapLocation instantiated from the coordinates given by array
-	 */
-	MapLocation convertLocationInts(int[] arr) {
-		return new MapLocation(Float.intBitsToFloat(arr[0]), Float.intBitsToFloat(arr[1]));
-	}
-
-	MapLocation readLocation(int firstChannel) throws GameActionException {
-		int[] array = new int[2];
-		array[0] = rc.readBroadcast(firstChannel);
-		array[1] = rc.readBroadcast(firstChannel + 1);
-		return convertLocationInts(array);
-	}
-
-	void writeLocation(MapLocation map, int firstChannel) throws GameActionException {
-		int[] arr = convertMapLocation(map);
-		rc.broadcast(firstChannel, arr[0]);
-		rc.broadcast(firstChannel + 1, arr[1]);
-	}
 }
