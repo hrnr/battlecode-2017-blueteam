@@ -10,6 +10,7 @@ import battlecode.common.BulletInfo;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
@@ -32,17 +33,38 @@ abstract public class Robot {
 
 	void run() throws GameActionException {
 		while (true) {
-			checkHealth();
-			dodge();
-			step();
-			if (getRobotCount(RobotType.ARCHON) == 0)
-				if (rc.getTeamBullets() > 900)
-					rc.donate(rc.getVictoryPointCost());
+			try {
+				checkHealth();
+				buyVictoryPoints();
+				dodge();
+				step();
+			} catch (GameActionException e) {
+				e.printStackTrace();
+			}
 			Clock.yield();
 		}
 	}
 
 	abstract void step() throws GameActionException;
+
+	/**
+	 * buys victory points for a team
+	 */
+	void buyVictoryPoints() throws GameActionException {
+		// donate all bullets if we can win immediately
+		if (rc.getTeamBullets() / rc.getVictoryPointCost()
+				+ rc.getTeamVictoryPoints() >= GameConstants.VICTORY_POINTS_TO_WIN) {
+			rc.donate(rc.getTeamBullets());
+		}
+
+		float bullets = rc.getTeamBullets();
+		if (bullets > TeamConstants.MAXIMUM_BULLETS_TO_SAVE) {
+			float bulletsToDonate = bullets - TeamConstants.MINIMUM_BULLETS_TO_SAVE;
+			// round bullets not to donate more than needed
+			bulletsToDonate -= bulletsToDonate % rc.getVictoryPointCost();
+			rc.donate(bulletsToDonate);
+		}
+	}
 
 	/**
 	 * advertise to others that this robot is alive
