@@ -23,11 +23,13 @@ abstract public class Robot {
 	Team enemy;
 	Random rand;
 	private boolean alive;
+	ImportantLocations combatLocations;
 
 	Robot(RobotController rc) {
 		this.rc = rc;
 		enemy = rc.getTeam().opponent();
 		rand = new Random();
+		combatLocations = new ImportantLocations(rc, TeamConstants.COMBAT_LOCATIONS_FIRST_CHANNEL);
 		newRobotBorn();
 	}
 
@@ -86,7 +88,15 @@ abstract public class Robot {
 				|| rc.getHealth() < TeamConstants.MINIMUM_HEALTH) {
 			updateRobotCount(-1);
 			alive = false;
+			reportDeath();
 		}
+	}
+
+	/**
+	 * reports death to all the friends so they could revenge their buddy
+	 */
+	protected void reportDeath() {
+		combatLocations.reportLocation(rc.getLocation());
 	}
 
 	/**
