@@ -58,7 +58,10 @@ abstract public class Robot {
 
 		float bullets = rc.getTeamBullets();
 		if (bullets > TeamConstants.MAXIMUM_BULLETS_TO_SAVE) {
-			rc.donate(bullets - TeamConstants.MINIMUM_BULLETS_TO_SAVE);
+			float bulletsToDonate = bullets - TeamConstants.MINIMUM_BULLETS_TO_SAVE;
+			// round bullets not to donate more than needed
+			bulletsToDonate -= bulletsToDonate % rc.getVictoryPointCost();
+			rc.donate(bulletsToDonate);
 		}
 	}
 
