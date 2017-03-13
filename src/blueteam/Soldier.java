@@ -21,12 +21,10 @@ import battlecode.common.TreeInfo;
 public class Soldier extends Robot {
 
 	private Direction moveDir;
-	ImportantLocations combatLocations;
 
 	Soldier(RobotController rc) {
 		super(rc);
 		moveDir = randomDirection();
-		combatLocations = new ImportantLocations(rc, TeamConstants.COMBAT_LOCATIONS_FIRST_CHANNEL);
 	}
 
 	@Override
