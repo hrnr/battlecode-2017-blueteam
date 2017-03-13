@@ -2,16 +2,18 @@ package blueteam;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
 import battlecode.common.TreeInfo;
 
 /**
- * Naive implementation: Moves randomly, changes direction only if the current
- * direction is blocked. However, with 25 % probability, it moves in the
- * direction of the opponents archon location. If it can shoot, it shoots and
- * stays in place
+ * Unless some enemy location is reported, moves randomly and changes the
+ * direction only if the current direction is blocked. However, with some
+ * probability, it moves in the direction of the opponents archon location. If
+ * it can shoot, it shoots and reports the enemy location to other soldiers.
  *
  * @author Tomas
  *
@@ -19,39 +21,69 @@ import battlecode.common.TreeInfo;
 public class Soldier extends Robot {
 
 	private Direction moveDir;
+	ImportantLocations combatLocations;
 
 	Soldier(RobotController rc) {
 		super(rc);
 		moveDir = randomDirection();
+		combatLocations = new ImportantLocations(rc, TeamConstants.COMBAT_LOCATIONS_FIRST_CHANNEL);
 	}
 
 	@Override
 	void step() throws GameActionException {
 		// See if there is an enemy which we can shoot
 		RobotInfo victim = getVictim();
-		if (victim != null) {
-			// And we have enough bullets, and haven't attacked yet this
-			// turn...
-			if (rc.canFireSingleShot()) {
 
+		// First move...
+		if (!rc.hasMoved()) {
+			if (victim != null && shouldApproachToEnemy(victim)) {
+				// Move in the direction of the enemy
+				moveDir = rc.getLocation().directionTo(victim.getLocation());
+			} else {
+				MapLocation[] activeLocations = combatLocations.getActiveLocations();
+
+				if (activeLocations.length != 0) {
+					moveDir = rc.getLocation().directionTo(activeLocations[0]);
+					rc.setIndicatorLine(rc.getLocation(), activeLocations[0], 255, 255, 0);
+				}
+				if (!rc.canMove(moveDir)) {
+					// Move randomly
+					changeMoveDirection();
+				}
+			}
+
+			tryMove(moveDir);
+		}
+		// ...then shoot (so that the robot does not kill itself).
+		if (victim != null) {
+			combatLocations.reportLocation(victim.getLocation());
+			if (shouldFireTriad(victim)) {
+				rc.fireTriadShot(rc.getLocation().directionTo(victim.getLocation()));
+				return;
+			} else if (rc.canFireSingleShot()) {
 				// ...Then fire a bullet in the direction of the enemy.
 				rc.fireSingleShot(rc.getLocation().directionTo(victim.getLocation()));
 				// Do not move..
 				return;
 			}
 		}
-		if (rc.hasMoved()) {
-			return;
-		}
 
-		// Move randomly
-		if (!rc.canMove(moveDir, rc.getType().strideRadius / 2)) {
-			changeMoveDirection();
-		}
-		if (!tryMove(moveDir)) {
-			if (rc.canMove(moveDir, rc.getType().strideRadius / 2))
-				rc.move(moveDir, rc.getType().strideRadius / 2);
-		}
+	}
+
+	private boolean shouldFireTriad(RobotInfo victim) {
+		Direction dir = rc.getLocation().directionTo(victim.getLocation());
+		float offset = GameConstants.TRIAD_SPREAD_DEGREES;
+		return haveEnoughBullets() && isEnemy(nearestInDirection(dir.rotateLeftDegrees(offset)))
+				&& isEnemy(nearestInDirection(dir.rotateRightDegrees(offset)));
+	}
+
+	private boolean haveEnoughBullets() {
+		return rc.canFireTriadShot() && rc.getTeamBullets() > TeamConstants.MINIMUM_BULLETS_TO_SAVE_BY_SOLDIER;
+	}
+
+	private boolean shouldApproachToEnemy(RobotInfo victim) {
+		return (victim.getType() != RobotType.SOLDIER && victim.getType() != RobotType.TANK)
+				|| rc.getLocation().distanceTo(victim.getLocation()) > TeamConstants.MAX_SOLDIER_TO_SOLDIER_DISTANCE;
 	}
 
 	private void changeMoveDirection() {
@@ -75,8 +107,8 @@ public class Soldier extends Robot {
 		MapLocation myLoc = rc.getLocation();
 		if (enemies.length == 0)
 			return null;
-		RobotInfo[] friends = rc.senseNearbyRobots(-1, enemy.opponent());
-		TreeInfo[] myTrees = rc.senseNearbyTrees(-1, enemy.opponent());
+		RobotInfo[] friends = rc.senseNearbyRobots(-1, rc.getTeam());
+		TreeInfo[] myTrees = rc.senseNearbyTrees(-1, rc.getTeam());
 		for (RobotInfo enemy : enemies) {
 			float distanceToEnemy = enemy.getLocation().distanceTo(myLoc);
 			Direction dirToEnemy = myLoc.directionTo(enemy.getLocation());

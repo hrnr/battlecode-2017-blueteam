@@ -15,6 +15,7 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
+import battlecode.common.TreeInfo;
 
 abstract public class Robot {
 	RobotController rc;
@@ -289,6 +290,46 @@ abstract public class Robot {
 				return true;
 		}
 		return false;
+	}
+
+	/**
+	 * The nearest object that would be hit by a shot in the given direction.
+	 *
+	 * @param dir
+	 * @return Might return null
+	 */
+	BodyInfo nearestInDirection(Direction dir) {
+		RobotInfo[] nearbyRobots = rc.senseNearbyRobots();
+		BodyInfo nearest = null;
+		float distance = Float.POSITIVE_INFINITY;
+		for (RobotInfo robot : nearbyRobots) {
+			if (willIHitRobot(dir, robot)) {
+				nearest = robot;
+				distance = rc.getLocation().distanceTo(nearest.getLocation());
+				break;
+			}
+		}
+		TreeInfo[] nearbyTrees = rc.senseNearbyTrees();
+		for (TreeInfo tree : nearbyTrees) {
+			if (willIHitBody(dir, tree)) {
+				if (rc.getLocation().distanceTo(tree.getLocation()) < distance) {
+					return tree;
+				}
+			}
+		}
+		return nearest;
+	}
+
+	boolean isEnemy(BodyInfo body) {
+		if (body == null)
+			return false;
+		return (body.isTree() ? ((TreeInfo) body).getTeam() : ((RobotInfo) body).getTeam()) == enemy;
+	}
+
+	boolean isFriend(BodyInfo body) {
+		if (body == null)
+			return false;
+		return (body.isTree() ? ((TreeInfo) body).getTeam() : ((RobotInfo) body).getTeam()) == rc.getTeam();
 	}
 
 	/**
