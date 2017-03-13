@@ -57,8 +57,6 @@ public abstract interface TeamConstants {
 	 */
 	public static final int COMBAT_LOCATIONS_FIRST_CHANNEL = 100;
 
-	public static final int LUMBERJACK_START_ATTACKING_FROM_ROUND = 300;
-
 	public static final int LUMBERJACK_START_ATTACKING_FROM_ROUND = 500;
 
 	public static final float LUMBERJACK_ATTACK_RADIUS = 20;
