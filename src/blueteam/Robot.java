@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Predicate;
 
 import battlecode.common.BodyInfo;
 import battlecode.common.BulletInfo;
@@ -20,13 +21,18 @@ import battlecode.common.TreeInfo;
 
 abstract public class Robot {
 	RobotController rc;
+	Navigation nav;
 	Team enemy;
 	Random rand;
 	private boolean alive;
+
 	ImportantLocations combatLocations;
+	// this is the slugs "tail" imagine leaving a trail of sticky goo on the map
+	// that you don't want to step in that slowly dissapates over time
 
 	Robot(RobotController rc) {
 		this.rc = rc;
+		nav = new Navigation(this, rc);
 		enemy = rc.getTeam().opponent();
 		rand = new Random();
 		combatLocations = new ImportantLocations(rc, TeamConstants.COMBAT_LOCATIONS_FIRST_CHANNEL);
@@ -158,7 +164,7 @@ abstract public class Robot {
 	 *
 	 * @return
 	 */
-	protected Direction randomFreeDirection() {
+	public Direction randomFreeDirection() {
 		Direction rndDir = null;
 		for (int i = 0; i < TeamConstants.GENERATING_DIR_MAX_TRIES_LIMIT; i++) {
 			rndDir = randomDirection();
@@ -166,6 +172,16 @@ abstract public class Robot {
 				return rndDir;
 		}
 		return rndDir;
+	}
+
+	Direction randomFreeDirection(Direction dir, float range) {
+		for (int i = 0; i < TeamConstants.GENERATING_DIR_MAX_TRIES_LIMIT; i++) {
+			float angle = rand.nextFloat() * range - (range / 2);
+			Direction rndDir = dir.rotateRightDegrees(angle);
+			if (rc.canMove(rndDir))
+				return rndDir;
+		}
+		return randomFreeDirection();
 	}
 
 	/**
@@ -224,7 +240,7 @@ abstract public class Robot {
 			// A move never happened, so return false.
 			return false;
 		} catch (GameActionException e) {
-			// this can't actually happen since we always ask canMove first
+			e.printStackTrace();
 			return false;
 		}
 	}
@@ -388,6 +404,16 @@ abstract public class Robot {
 		for (RobotInfo robot : robots) {
 			if (robot.getType() == type)
 				res.add(robot);
+		}
+		return res;
+	}
+
+	ArrayList<TreeInfo> filterTreeBy(TreeInfo[] trees, Predicate<TreeInfo> cond) {
+		ArrayList<TreeInfo> res = new ArrayList<>();
+		for (TreeInfo tree : trees) {
+			if (cond.test(tree)) {
+				res.add(tree);
+			}
 		}
 		return res;
 	}

@@ -56,4 +56,12 @@ public abstract interface TeamConstants {
 	 * Used channels: currently 100 - 115, reserved channels 100 - 130
 	 */
 	public static final int COMBAT_LOCATIONS_FIRST_CHANNEL = 100;
+
+	public static final int LUMBERJACK_START_ATTACKING_FROM_ROUND = 500;
+
+	public static final float LUMBERJACK_ATTACK_RADIUS = 20;
+
+	public static final float SCOUT_AVOID_LUMBERJACK_RANGE = 90;
+	public static final float SCOUT_MOVEMENT_BLOCKED_DIR_RANGE = 180;
+
 }
