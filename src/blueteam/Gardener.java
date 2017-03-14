@@ -239,7 +239,8 @@ public class Gardener extends Robot {
 	 * \
 	 * \-----> BUILDING
 	 */
-	@Override void step() {
+	@Override
+	void step() {
 		roundCounter++;
 		switch (state) {
 		case STARTING:

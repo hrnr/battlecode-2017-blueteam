@@ -60,10 +60,11 @@ abstract public class Robot {
 	 */
 	void buyVictoryPoints() throws GameActionException {
 		// donate all bullets if we can win immediately
-		if (rc.getTeamBullets() / rc.getVictoryPointCost() + rc.getTeamVictoryPoints()
-				>= GameConstants.VICTORY_POINTS_TO_WIN) {
+		if (rc.getTeamBullets() / rc.getVictoryPointCost()
+				+ rc.getTeamVictoryPoints()	>= GameConstants.VICTORY_POINTS_TO_WIN) {
 			rc.donate(rc.getTeamBullets());
 		}
+		// dont buy befor round 100	
 		if (rc.getRoundNum() < 100)
 			return;
 		;
