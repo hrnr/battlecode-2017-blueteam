@@ -16,14 +16,13 @@ import battlecode.common.TreeInfo;
 
 /**
  * Naive implementation:
- *
+ * <p>
  * Chops the nearest (non-friendly) tree. (Regardless on the
  * treeInfo.containedBullets) Is aggressive: prefers attacking if enemy is in
  * sight. Moves randomly, changes direction only if the current direction is
  * blocked.
  *
  * @author Tomas
- *
  */
 public class LumberJack extends Robot {
 
@@ -31,6 +30,7 @@ public class LumberJack extends Robot {
 	boolean avoidingFriendlyHit;
 	int counter;
 	MapLocation enemyLocation;
+	int attackRoundsCount;
 
 	LumberJack(RobotController rc) {
 		super(rc);
@@ -38,6 +38,7 @@ public class LumberJack extends Robot {
 		avoidingFriendlyHit = false;
 		counter = 0;
 		enemyLocation = rc.getInitialArchonLocations(rc.getTeam().opponent())[0];
+		attackRoundsCount = 0;
 	}
 
 	boolean friendlyStrikeDamage() {
@@ -171,9 +172,20 @@ public class LumberJack extends Robot {
 		if (isAttackTime()) {
 			if (myLocation.distanceTo(enemyLocation) < TeamConstants.LUMBERJACK_ATTACK_RADIUS) {
 				moveRandomly();
+				++attackRoundsCount;
 			} else {
 				nav.moveToTarget(enemyLocation);
 				moveDirection = myLocation.directionTo(enemyLocation);
+			}
+			if (attackRoundsCount > TeamConstants.LUMBERJACK_ROUNDS_IN_ATACK_ZONE) {
+				attackRoundsCount = 0;
+				Optional<MapLocation> loc = Arrays.stream(rc.getInitialArchonLocations(enemy))
+						.filter(location -> !location.equals(enemyLocation)).findFirst();
+				if (loc.isPresent()) {
+					enemyLocation = loc.get();
+				} else {
+					enemyLocation = combatLocations.getActiveLocations()[0];
+				}
 			}
 		} else {
 			moveRandomly();

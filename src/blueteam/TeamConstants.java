@@ -60,6 +60,12 @@ public abstract interface TeamConstants {
 	public static final int LUMBERJACK_START_ATTACKING_FROM_ROUND = 500;
 
 	public static final float LUMBERJACK_ATTACK_RADIUS = 20;
+	/**
+	 * How many rounds should robot stay in the original zone of enemy archon.
+	 * After this duration lumberjack moves to the location where is current
+	 * fighting located.
+	 */
+	public static final int LUMBERJACK_ROUNDS_IN_ATACK_ZONE = 50;
 
 	public static final float SCOUT_AVOID_LUMBERJACK_RANGE = 90;
 	public static final float SCOUT_MOVEMENT_BLOCKED_DIR_RANGE = 180;
