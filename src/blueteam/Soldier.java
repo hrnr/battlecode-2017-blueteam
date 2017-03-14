@@ -21,6 +21,7 @@ import battlecode.common.TreeInfo;
 public class Soldier extends Robot {
 
 	private Direction moveDir;
+	private boolean stuckDetected = false;
 
 	Soldier(RobotController rc) {
 		super(rc);
@@ -40,13 +41,21 @@ public class Soldier extends Robot {
 			} else {
 				MapLocation[] activeLocations = combatLocations.getActiveLocations();
 
-				if (activeLocations.length != 0) {
+				if (activeLocations.length != 0 && !stuckDetected) {
 					moveDir = rc.getLocation().directionTo(activeLocations[0]);
 					rc.setIndicatorLine(rc.getLocation(), activeLocations[0], 255, 255, 0);
+					if (moveDir == null || !rc.canMove(moveDir)) {
+						stuckDetected = true;
+						rc.setIndicatorDot(rc.getLocation(), 255, 0, 0);
+						moveDir = randomFreeDirection();
+					}
 				}
 				if (!rc.canMove(moveDir)) {
 					// Move randomly
+
 					changeMoveDirection();
+					stuckDetected = false;
+					rc.setIndicatorDot(rc.getLocation(), 0, 255, 0);
 				}
 			}
 
@@ -89,7 +98,6 @@ public class Soldier extends Robot {
 			moveDir = randomFreeDirection();
 		} else {
 			moveDir = getDirToEnemyArchonInitLoc();
-			rc.setIndicatorDot(rc.getLocation(), 0, 255, 255);
 		}
 	}
 
