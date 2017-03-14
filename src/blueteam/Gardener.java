@@ -28,6 +28,7 @@ public class Gardener extends Robot {
 	int lumberjackBuilded = 0;
 	boolean soldierBuilded = false;
 	int initTreeNum = 0;
+	float currentHealth = rc.getType().getStartingHealth();
 
 	/**
 	 * Searches for suitable location to start building hexagonal tree garden
@@ -226,6 +227,14 @@ public class Gardener extends Robot {
 		gardenEntrance = Direction.EAST.rotateRightDegrees(((int) gardenEntrance.getAngleDegrees() / 60) * 60);
 	}
 
+	void checkHealth() {
+		if (rc.getHealth() < currentHealth) {
+			currentHealth = rc.getHealth();
+			combatLocations.reportLocation(rc.getLocation());
+		}
+
+	}
+
 	@Override void dodge() {
 
 	}
@@ -241,6 +250,7 @@ public class Gardener extends Robot {
 	 */
 	@Override
 	void step() {
+		checkHealth();
 		roundCounter++;
 		switch (state) {
 		case STARTING:
