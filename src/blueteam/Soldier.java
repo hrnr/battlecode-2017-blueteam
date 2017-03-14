@@ -44,7 +44,7 @@ public class Soldier extends Robot {
 				if (activeLocations.length != 0 && !stuckDetected) {
 					moveDir = rc.getLocation().directionTo(activeLocations[0]);
 					rc.setIndicatorLine(rc.getLocation(), activeLocations[0], 255, 255, 0);
-					if (!rc.canMove(moveDir)) {
+					if (moveDir == null || !rc.canMove(moveDir)) {
 						stuckDetected = true;
 						rc.setIndicatorDot(rc.getLocation(), 255, 0, 0);
 						moveDir = randomFreeDirection();
