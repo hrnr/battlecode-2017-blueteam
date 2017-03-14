@@ -427,4 +427,24 @@ abstract public class Robot {
 		}
 		return Optional.empty();
 	}
+
+	/**
+	 * Return trees in direction dir. All trees must be in the cone starting
+	 * from robot location with maximum angle delta from original direction
+	 * 
+	 * @param trees
+	 *            trees used in filtering
+	 * @param dir
+	 *            Direction
+	 * 
+	 * @param delta
+	 *            maximum angle in degrees between vector to tree and vector dir
+	 * @return trees in specified cone.
+	 */
+	ArrayList<TreeInfo> treesInDir(TreeInfo[] trees, Direction dir, float delta) {
+		return filterTreeBy(trees, tree -> {
+			Direction dirToTree = rc.getLocation().directionTo(tree.getLocation());
+			return (Math.abs(dirToTree.degreesBetween(dir)) < delta);
+		});
+	}
 }
