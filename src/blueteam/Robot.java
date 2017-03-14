@@ -429,23 +429,20 @@ abstract public class Robot {
 	}
 
 	/**
-	 * Return trees in direction dir and distance range. All trees must be in
-	 * the cone starting from robot location with maximum angle delta from
-	 * original direction
+	 * Return trees in direction dir. All trees must be in the cone starting
+	 * from robot location with maximum angle delta from original direction
 	 * 
+	 * @param trees
+	 *            trees used in filtering
 	 * @param dir
 	 *            Direction
-	 * @param range
-	 *            maximum range to sense trees in
+	 * 
 	 * @param delta
 	 *            maximum angle in degrees between vector to tree and vector dir
 	 * @return trees in specified cone.
 	 */
-	ArrayList<TreeInfo> treesInDir(Direction dir, float range, float delta) {
-		if (range > rc.getType().sensorRadius)
-			range = rc.getType().sensorRadius;
-		TreeInfo[] treesInRange = rc.senseNearbyTrees(range);
-		return filterTreeBy(treesInRange, tree -> {
+	ArrayList<TreeInfo> treesInDir(TreeInfo[] trees, Direction dir, float delta) {
+		return filterTreeBy(trees, tree -> {
 			Direction dirToTree = rc.getLocation().directionTo(tree.getLocation());
 			return (Math.abs(dirToTree.degreesBetween(dir)) < delta);
 		});

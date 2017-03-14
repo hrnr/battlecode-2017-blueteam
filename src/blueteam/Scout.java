@@ -56,7 +56,8 @@ public class Scout extends Robot {
 			MapLocation myLocation = rc.getLocation();
 			MapLocation gardenerLocation = gardener.getLocation();
 			Direction gardenerDir = myLocation.directionTo(gardenerLocation);
-			return treesInDir(gardenerDir, myLocation.distanceTo(gardenerLocation), 30).size() == 0;
+			TreeInfo[] trees = rc.senseNearbyTrees(myLocation.distanceTo(gardenerLocation), enemy);
+			return treesInDir(trees, gardenerDir, 30).size() == 0;
 		}).findFirst();
 	}
 
@@ -66,8 +67,8 @@ public class Scout extends Robot {
 			return;
 		Optional<RobotInfo> lumberjack = getNearestRobot(RobotType.LUMBERJACK, rc.getType().sensorRadius / 2f);
 		if (lumberjack.isPresent()) {
-			// rc.setIndicatorDot(lumberjack.get().getLocation(), 0, 0, 255);
-			dir = rc.getLocation().directionTo(lumberjack.get().getLocation());
+			rc.setIndicatorDot(lumberjack.get().getLocation(), 0, 0, 255);
+			dir = rc.getLocation().directionTo(lumberjack.get().getLocation()).opposite();
 			dir = randomFreeDirection(dir, TeamConstants.SCOUT_AVOID_LUMBERJACK_RANGE);
 			try {
 				rc.move(dir);
@@ -78,6 +79,26 @@ public class Scout extends Robot {
 		}
 		if (rc.hasMoved())
 			return;
+
+		try {
+			Optional<TreeInfo> bulletTree = findBulletTree();
+			if (bulletTree.isPresent()) {
+				if (!shakeTheTree(bulletTree.get())) {
+					// we need to get to this tree first
+					MapLocation treeLoc = bulletTree.get().getLocation();
+					if (rc.canMove(treeLoc) == true) {
+						rc.move(treeLoc);
+						return;
+					}
+				} else {
+					rc.move(randomFreeDirection());
+					return;
+				}
+			}
+		} catch (GameActionException e) {
+			e.printStackTrace();
+		}
+
 		ArrayList<RobotInfo> gardeners = filterByType(rc.senseNearbyRobots(-1, enemy), RobotType.GARDENER);
 		if (gardeners.size() > 0) {
 			Optional<RobotInfo> gardener = nearGardenerWithoutTrees();
@@ -100,25 +121,6 @@ public class Scout extends Robot {
 				tryMove(rc.getLocation().directionTo(gardeners.get(0).getLocation()));
 				return;
 			}
-		}
-
-		try {
-			Optional<TreeInfo> bulletTree = findBulletTree();
-			if (bulletTree.isPresent()) {
-				if (!shakeTheTree(bulletTree.get())) {
-					// we need to get to this tree first
-					MapLocation treeLoc = bulletTree.get().getLocation();
-					if (rc.canMove(treeLoc) == true) {
-						rc.move(treeLoc);
-						return;
-					}
-				} else {
-					rc.move(randomFreeDirection());
-					return;
-				}
-			}
-		} catch (GameActionException e) {
-			e.printStackTrace();
 		}
 
 		// just move in direction
