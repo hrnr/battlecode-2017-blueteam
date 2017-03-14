@@ -1,5 +1,6 @@
 package blueteam;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 import battlecode.common.Direction;
@@ -50,15 +51,23 @@ public class Scout extends Robot {
 		return false;
 	}
 
+	Optional<RobotInfo> nearGardenerWithoutTrees() {
+		return filterByType(rc.senseNearbyRobots(-1, enemy), RobotType.GARDENER).stream().filter(gardener -> {
+			MapLocation myLocation = rc.getLocation();
+			MapLocation gardenerLocation = gardener.getLocation();
+			Direction gardenerDir = myLocation.directionTo(gardenerLocation);
+			return treesInDir(gardenerDir, myLocation.distanceTo(gardenerLocation), 30).size() == 0;
+		}).findFirst();
+	}
+
 	@Override
 	void step() {
 		if (rc.hasMoved())
 			return;
-
 		Optional<RobotInfo> lumberjack = getNearestRobot(RobotType.LUMBERJACK, rc.getType().sensorRadius / 2f);
 		if (lumberjack.isPresent()) {
 			// rc.setIndicatorDot(lumberjack.get().getLocation(), 0, 0, 255);
-			dir = new Direction(rc.getLocation(), lumberjack.get().getLocation()).opposite();
+			dir = rc.getLocation().directionTo(lumberjack.get().getLocation());
 			dir = randomFreeDirection(dir, TeamConstants.SCOUT_AVOID_LUMBERJACK_RANGE);
 			try {
 				rc.move(dir);
@@ -67,6 +76,32 @@ public class Scout extends Robot {
 			}
 			return;
 		}
+		if (rc.hasMoved())
+			return;
+		ArrayList<RobotInfo> gardeners = filterByType(rc.senseNearbyRobots(-1, enemy), RobotType.GARDENER);
+		if (gardeners.size() > 0) {
+			Optional<RobotInfo> gardener = nearGardenerWithoutTrees();
+			if (gardener.isPresent()) {
+				if (rc.getLocation().distanceTo(gardener.get().getLocation()) > rc.getType().sensorRadius / 4) {
+					// get closer to gardener
+					tryMove(rc.getLocation().directionTo(gardener.get().getLocation()));
+				}
+				// shoot him down
+				if (rc.canFireSingleShot()) {
+					try {
+						rc.fireSingleShot(rc.getLocation().directionTo(gardener.get().getLocation()));
+					} catch (GameActionException e) {
+						e.printStackTrace();
+					}
+				}
+				return;
+
+			} else {
+				tryMove(rc.getLocation().directionTo(gardeners.get(0).getLocation()));
+				return;
+			}
+		}
+
 		try {
 			Optional<TreeInfo> bulletTree = findBulletTree();
 			if (bulletTree.isPresent()) {
