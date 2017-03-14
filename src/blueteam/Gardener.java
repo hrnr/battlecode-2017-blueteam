@@ -102,7 +102,6 @@ public class Gardener extends Robot {
 	boolean buildGarden() {
 
 		boolean ret = false;
-		//Direction dir = TeamConstants.GARDENERS_GARDEN_ENTRANCE; // TODO delete constant
 		if (gardenEntrance == null)
 			setGardenEntrance();
 		Direction dir = gardenEntrance;
@@ -140,7 +139,7 @@ public class Gardener extends Robot {
 				Clock.yield();
 			}
 		}
-
+		// now water every tree
 		for (int i = 0; i < trees.length; i++) {
 			if (rc.canWater(trees[i].getLocation())) {
 				try {
@@ -219,6 +218,9 @@ public class Gardener extends Robot {
 			return false;
 	}
 
+	/**
+	 * Set garden entrance towards enemy, helps gardeners in defence and soldiers have easier path
+	 */
 	void setGardenEntrance() {
 		gardenEntrance = rc.getLocation().directionTo(rc.getInitialArchonLocations(enemy)[0]);
 		gardenEntrance = Direction.EAST.rotateRightDegrees(((int) gardenEntrance.getAngleDegrees() / 60) * 60);
@@ -251,6 +253,7 @@ public class Gardener extends Robot {
 				state = GardenerState.FINDING;
 			break;
 		case FINDING:
+			// after 100 round of life, give it up and in 160 degree range towards enemy loc., than build.
 			if (rc.getRoundNum() - birthRound > 100) {
 				Direction dir = rc.getLocation().directionTo(rc.getInitialArchonLocations(enemy)[0]);
 				dir = dir.rotateLeftDegrees(rand.nextInt(160) - 80);
@@ -275,7 +278,7 @@ public class Gardener extends Robot {
 				initTreeNum++;
 			// water garden
 			waterGarden();
-			//build atleast 3 trees
+			//build at least 2 trees
 			if (initTreeNum < 2)
 				break;
 			// force to build robots
@@ -294,15 +297,15 @@ public class Gardener extends Robot {
 			if (rnd < 0.25) {
 				if (getRobotCount(RobotType.SCOUT) < TeamConstants.MAX_NUMBER_SCOUTS)
 					build(RobotType.SCOUT);
-				else if (getRobotCount(RobotType.SOLDIER) < 15)
+				else if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS)
 					build(RobotType.SOLDIER);
 			} else if (rnd < 0.5) {
 				if (getRobotCount(RobotType.LUMBERJACK) < TeamConstants.MAX_NUMBER_LUMBERJACKS)
 					build(RobotType.LUMBERJACK);
-				else if (getRobotCount(RobotType.SOLDIER) < 15)
+				else if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS)
 					build(RobotType.SOLDIER);
 			} else {
-				if (getRobotCount(RobotType.SOLDIER) < 15)
+				if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS)
 					build(RobotType.SOLDIER);
 			}
 
@@ -310,7 +313,7 @@ public class Gardener extends Robot {
 		case ONLYSOLDIERS:
 			// while enemy archon is nearby build soldiers !!
 			if (isEnemyArchonNear())
-				if (getRobotCount(RobotType.SOLDIER) < 15)
+				if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS)
 					build(RobotType.SOLDIER);
 				else
 					state = GardenerState.FINDING;

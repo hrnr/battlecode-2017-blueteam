@@ -18,6 +18,8 @@ public class Archon extends Robot {
 
 	@Override void step() throws GameActionException {
 		roundCounter++;
+		// Dont move purely randomly each turn, go in some rand direction that is not in 80 degree range of enemy
+		// spawn location. Go for 40 turns somewhere, dont hug the edge of map too.
 		if (roundCounter > 40) {
 			roundCounter = 0;
 			currentDir = randomDirection();
@@ -37,7 +39,8 @@ public class Archon extends Robot {
 		} else {
 			tryMove(currentDir);
 		}
-		//
+		// Hardcoded first 180 rounds. Just build gardener each 60 rounds.
+		// Easiest way to give gardeners enough time to expand. After round 180 continue in general approach.
 		Direction dir = randomDirection();
 		if (rc.getRoundNum() >= 0 && rc.getRoundNum() < 60 && step == 0) {
 			rc.hireGardener(dir);
@@ -50,14 +53,12 @@ public class Archon extends Robot {
 			step++;
 		} else {
 			// we want to preserve some bullet points for gardener
-			if (rc.getTeamBullets() < 200 && getRobotCount(RobotType.GARDENER) > 5
-					&& getRobotCount(RobotType.GARDENER) < 2) {
+			if (rc.getTeamBullets() < TeamConstants.MINIMUM_BULLETS_TO_SAVE && getRobotCount(RobotType.GARDENER) > 5) {
 				return;
 			}
 			// randomly attempt to build a gardener if we need more
 
-			//System.out.println(getRobotCount(RobotType.GARDENER));
-			if (rc.canHireGardener(dir) && 15 > getRobotCount(RobotType.GARDENER)) {
+			if (rc.canHireGardener(dir) && TeamConstants.DESIRED_NUMBER_OF_GARDENERS > getRobotCount(RobotType.GARDENER)) {
 				rc.hireGardener(dir);
 			}
 		}

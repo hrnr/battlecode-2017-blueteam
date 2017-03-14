@@ -3,8 +3,7 @@ package blueteam;
 import battlecode.common.Direction;
 
 public abstract interface TeamConstants {
-	public static final int DESIRED_NUMBER_OF_GARDENERS = 10;
-	public static final int GARDENERS_COUNT_CHANNEL = 0;
+	public static final int DESIRED_NUMBER_OF_GARDENERS = 15;
 
 	// The maximum number of tries per turn for finding a direction in which
 	// the robot can move.
@@ -26,15 +25,13 @@ public abstract interface TeamConstants {
 	 * are reserved for this.
 	 */
 	public static final int ROBOT_COUNTERS_BEGIN = 0;
-	public static final int MINIMUM_BULLETS_TO_SAVE = 1500;
-	public static final int MAXIMUM_BULLETS_TO_SAVE = 2000;
+	public static final int MINIMUM_BULLETS_TO_SAVE = 150;
+	public static final int MAXIMUM_BULLETS_TO_SAVE = 250;
 
-	public static final int GARDENERS_DIRECT_PATH_LENGTH = 30;
 	public static final float GARDENERS_DEFAULT_FREE_SPOT_RADIUS = 6.5f;
 
-	public static final Direction GARDENERS_GARDEN_ENTRANCE = Direction.WEST;
 	public static final int GARDENER_NUM_OF_TREES_TO_BUILD_LUMBER = 3;
-	public static final int MAX_NUMBER_SOLDIERS = 40;
+	public static final int MAX_NUMBER_SOLDIERS = 15;
 
 	public static final int MAX_NUMBER_LUMBERJACKS = 3;
 	public static final int MAX_NUMBER_SCOUTS = 2;
