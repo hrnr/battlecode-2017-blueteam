@@ -64,7 +64,7 @@ abstract public class Robot {
 				+ rc.getTeamVictoryPoints()	>= GameConstants.VICTORY_POINTS_TO_WIN) {
 			rc.donate(rc.getTeamBullets());
 		}
-		// dont buy befor round 100	
+		// dont buy befor round 100
 		if (rc.getRoundNum() < 100)
 			return;
 		;

@@ -16,7 +16,8 @@ public class Archon extends Robot {
 	Direction currentDir = randomDirection();
 	int step = 0;
 
-	@Override void step() throws GameActionException {
+	@Override
+	void step() throws GameActionException {
 		roundCounter++;
 		// Dont move purely randomly each turn, go in some rand direction that is not in 80 degree range of enemy
 		// spawn location. Go for 40 turns somewhere, dont hug the edge of map too.

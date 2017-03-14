@@ -121,8 +121,7 @@ public class Soldier extends Robot {
 			float distanceToEnemy = enemy.getLocation().distanceTo(myLoc);
 			Direction dirToEnemy = myLoc.directionTo(enemy.getLocation());
 			if (!willIHitSomething(dirToEnemy, friends, distanceToEnemy)
-					&& !willIHitSomething(dirToEnemy, myTrees,
-					distanceToEnemy))
+					&& !willIHitSomething(dirToEnemy, myTrees, distanceToEnemy))
 				return enemy;
 		}
 		return null;
