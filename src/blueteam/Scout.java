@@ -44,7 +44,7 @@ public class Scout extends Robot {
 			try {
 				rc.shake(tree.getLocation());
 			} catch (GameActionException e) {
-				e.printStackTrace();
+				//e.printStackTrace();
 			}
 			return true;
 		}

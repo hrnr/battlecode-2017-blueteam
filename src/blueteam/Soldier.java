@@ -16,7 +16,6 @@ import battlecode.common.TreeInfo;
  * it can shoot, it shoots and reports the enemy location to other soldiers.
  *
  * @author Tomas
- *
  */
 public class Soldier extends Robot {
 
@@ -28,8 +27,7 @@ public class Soldier extends Robot {
 		moveDir = randomDirection();
 	}
 
-	@Override
-	void step() throws GameActionException {
+	@Override void step() throws GameActionException {
 		// See if there is an enemy which we can shoot
 		RobotInfo victim = getVictim();
 
@@ -80,8 +78,8 @@ public class Soldier extends Robot {
 	private boolean shouldFireTriad(RobotInfo victim) {
 		Direction dir = rc.getLocation().directionTo(victim.getLocation());
 		float offset = GameConstants.TRIAD_SPREAD_DEGREES;
-		return haveEnoughBullets() && isEnemy(nearestInDirection(dir.rotateLeftDegrees(offset)))
-				&& isEnemy(nearestInDirection(dir.rotateRightDegrees(offset)));
+		return haveEnoughBullets() && isEnemy(nearestInDirection(dir.rotateLeftDegrees(offset))) && isEnemy(
+				nearestInDirection(dir.rotateRightDegrees(offset)));
 	}
 
 	private boolean haveEnoughBullets() {
@@ -118,8 +116,8 @@ public class Soldier extends Robot {
 		for (RobotInfo enemy : enemies) {
 			float distanceToEnemy = enemy.getLocation().distanceTo(myLoc);
 			Direction dirToEnemy = myLoc.directionTo(enemy.getLocation());
-			if (!willIHitSomething(dirToEnemy, friends, distanceToEnemy)
-					&& !willIHitSomething(dirToEnemy, myTrees, distanceToEnemy))
+			if (!willIHitSomething(dirToEnemy, friends, distanceToEnemy) && !willIHitSomething(dirToEnemy, myTrees,
+					distanceToEnemy))
 				return enemy;
 		}
 		return null;

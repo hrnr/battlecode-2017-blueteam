@@ -11,18 +11,18 @@ public class Archon extends Robot {
 	Archon(RobotController rc) {
 		super(rc);
 	}
+
 	int roundCounter = 0;
 	Direction currentDir = randomDirection();
 	int step = 0;
 
-	@Override
-	void step() throws GameActionException {
+	@Override void step() throws GameActionException {
 		roundCounter++;
 		if (roundCounter > 40) {
 			roundCounter = 0;
 			currentDir = randomDirection();
-			while (Math.abs(currentDir.getAngleDegrees() -
-					rc.getLocation().directionTo(rc.getInitialArchonLocations(enemy)[0]).getAngleDegrees()) < 40 )
+			while (Math.abs(currentDir.getAngleDegrees() - rc.getLocation()
+					.directionTo(rc.getInitialArchonLocations(enemy)[0]).getAngleDegrees()) < 40)
 				currentDir = randomDirection();
 
 		}
@@ -50,12 +50,13 @@ public class Archon extends Robot {
 			step++;
 		} else {
 			// we want to preserve some bullet points for gardener
-			if (rc.getTeamBullets() < 400 && getRobotCount(RobotType.GARDENER) > 5 && getRobotCount(RobotType.GARDENER) < 2) {
+			if (rc.getTeamBullets() < 200 && getRobotCount(RobotType.GARDENER) > 5
+					&& getRobotCount(RobotType.GARDENER) < 2) {
 				return;
 			}
 			// randomly attempt to build a gardener if we need more
 
-			System.out.println(getRobotCount(RobotType.GARDENER));
+			//System.out.println(getRobotCount(RobotType.GARDENER));
 			if (rc.canHireGardener(dir) && 15 > getRobotCount(RobotType.GARDENER)) {
 				rc.hireGardener(dir);
 			}
