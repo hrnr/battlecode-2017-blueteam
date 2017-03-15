@@ -40,7 +40,7 @@ public class Gardener extends Robot {
 		// get robots in radius
 		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(radius);
 
-		if (roundCounter > 100) {
+		if (roundCounter > 80) {
 			roundCounter = 0;
 			currentDir = randomDirection();
 		}
@@ -168,16 +168,22 @@ public class Gardener extends Robot {
 		if (!random)
 			dir = gardenEntrance;
 		else
-			dir = randomDirection();
+			dir = randomFreeDirection();
 		if (rc.canBuildRobot(type, dir)) {
 			try {
 				rc.buildRobot(type, dir);
+				return true;
 			} catch (GameActionException e) {
 				return false;
 			}
-			return true;
 		} else {
-			return false;
+			dir = randomFreeDirection();
+			try {
+				rc.buildRobot(type, dir);
+				return true;
+			} catch (GameActionException e) {
+				return false;
+			}
 		}
 	}
 
@@ -268,8 +274,9 @@ public class Gardener extends Robot {
 			if (rc.getRoundNum() - birthRound > 100) {
 				Direction dir = rc.getLocation().directionTo(rc.getInitialArchonLocations(enemy)[0]);
 				dir = dir.rotateLeftDegrees(rand.nextInt(160) - 80);
-				while (rc.getRoundNum() - birthRound > 200) {
+				while (rc.getRoundNum() - birthRound < 160) {
 					tryMove(dir);
+					Clock.yield();
 				}
 				state = GardenerState.BUILDING;
 			}
@@ -325,7 +332,8 @@ public class Gardener extends Robot {
 			// while enemy archon is nearby build soldiers !!
 			if (isEnemyArchonNear())
 				if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS)
-					build(RobotType.SOLDIER);
+					while (!build(RobotType.SOLDIER))
+						Clock.yield();
 				else
 					state = GardenerState.FINDING;
 			break;

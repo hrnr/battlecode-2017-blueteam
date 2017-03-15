@@ -44,14 +44,20 @@ public class Archon extends Robot {
 		// Easiest way to give gardeners enough time to expand. After round 180 continue in general approach.
 		Direction dir = randomDirection();
 		if (rc.getRoundNum() >= 0 && rc.getRoundNum() < 60 && step == 0) {
-			rc.hireGardener(dir);
-			step++;
+			if (rc.getTeamBullets()> 110) {
+				rc.hireGardener(dir);
+				step++;
+			}
 		} else if (rc.getRoundNum() >= 60 && rc.getRoundNum() < 120 && step == 1) {
-			rc.hireGardener(dir);
-			step++;
+			if (rc.getTeamBullets()> 110) {
+				rc.hireGardener(dir);
+				step++;
+			}
 		} else if (rc.getRoundNum() >= 120 && rc.getRoundNum() < 180 && step == 2) {
-			rc.hireGardener(dir);
-			step++;
+			if (rc.getTeamBullets()> 110) {
+				rc.hireGardener(dir);
+				step++;
+			}
 		} else {
 			// we want to preserve some bullet points for gardener
 			if (rc.getTeamBullets() < TeamConstants.MINIMUM_BULLETS_TO_SAVE && getRobotCount(RobotType.GARDENER) > 5) {
