@@ -47,7 +47,7 @@ abstract public class Robot {
 				dodge();
 				step();
 			} catch (GameActionException e) {
-				e.printStackTrace();
+				//e.printStackTrace();
 			}
 			Clock.yield();
 		}
@@ -61,10 +61,13 @@ abstract public class Robot {
 	void buyVictoryPoints() throws GameActionException {
 		// donate all bullets if we can win immediately
 		if (rc.getTeamBullets() / rc.getVictoryPointCost()
-				+ rc.getTeamVictoryPoints() >= GameConstants.VICTORY_POINTS_TO_WIN) {
+				+ rc.getTeamVictoryPoints()	>= GameConstants.VICTORY_POINTS_TO_WIN) {
 			rc.donate(rc.getTeamBullets());
 		}
-
+		// dont buy befor round 100
+		if (rc.getRoundNum() < 100)
+			return;
+		;
 		float bullets = rc.getTeamBullets();
 		if (bullets > TeamConstants.MAXIMUM_BULLETS_TO_SAVE) {
 			float bulletsToDonate = bullets - TeamConstants.MINIMUM_BULLETS_TO_SAVE;
@@ -108,8 +111,7 @@ abstract public class Robot {
 	/**
 	 * updates shared information about how much robots we have of given type
 	 *
-	 * @param i
-	 *            how much to update
+	 * @param i how much to update
 	 */
 	private void updateRobotCount(int i) {
 		int channel = TeamConstants.ROBOT_COUNTERS_BEGIN + rc.getType().ordinal();
@@ -134,7 +136,7 @@ abstract public class Robot {
 			return count;
 		} catch (GameActionException e) {
 			// should never happen
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 		return 0;
 	}
@@ -188,8 +190,7 @@ abstract public class Robot {
 	 * Attempts to move in a given direction, while avoiding small obstacles
 	 * directly in the path.
 	 *
-	 * @param dir
-	 *            The intended direction of movement
+	 * @param dir The intended direction of movement
 	 * @return true if a move was performed
 	 * @throws GameActionException
 	 */
@@ -201,18 +202,17 @@ abstract public class Robot {
 	 * Attempts to move in a given direction, while avoiding small obstacles
 	 * direction in the path.
 	 *
-	 * @param dir
-	 *            The intended direction of movement
-	 * @param degreeOffset
-	 *            Spacing between checked directions (degrees)
-	 * @param checksPerSide
-	 *            Number of extra directions checked on each side, if intended
-	 *            direction was unavailable
+	 * @param dir           The intended direction of movement
+	 * @param degreeOffset  Spacing between checked directions (degrees)
+	 * @param checksPerSide Number of extra directions checked on each side, if intended
+	 *                      direction was unavailable
 	 * @return true if a move was performed
 	 * @throws GameActionException
 	 */
 	boolean tryMove(Direction dir, float degreeOffset, int checksPerSide) {
 		try {
+			if (dir == null)
+				return false;
 			// First, try intended direction
 			if (rc.canMove(dir)) {
 				rc.move(dir);
@@ -240,7 +240,7 @@ abstract public class Robot {
 			// A move never happened, so return false.
 			return false;
 		} catch (GameActionException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 			return false;
 		}
 	}
@@ -250,10 +250,9 @@ abstract public class Robot {
 	 * given bullet is on a collision course with the current robot. Doesn't
 	 * take into account objects between the bullet and this robot.
 	 *
-	 * @param bullet
-	 *            The bullet in question
+	 * @param bullet The bullet in question
 	 * @return True if the line of the bullet's path intersects with this
-	 *         robot's current position.
+	 * robot's current position.
 	 */
 	boolean willCollideWithMe(BulletInfo bullet) {
 		MapLocation myLocation = rc.getLocation();
@@ -323,11 +322,9 @@ abstract public class Robot {
 	 * shoot into the direction "shootingDirection"
 	 *
 	 * @param shootingDirection
-	 * @param bodies
-	 *            List of robots/trees sorted by distance from me.
-	 * @param maxRadius
-	 *            Skips robots/trees that are further from me than the given
-	 *            distance.
+	 * @param bodies            List of robots/trees sorted by distance from me.
+	 * @param maxRadius         Skips robots/trees that are further from me than the given
+	 *                          distance.
 	 * @return
 	 */
 	<T extends BodyInfo> boolean willIHitSomething(Direction shootingDirection, T[] bodies, float maxRadius) {

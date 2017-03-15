@@ -44,13 +44,12 @@ public class Scout extends Robot {
 			try {
 				rc.shake(tree.getLocation());
 			} catch (GameActionException e) {
-				e.printStackTrace();
+				//e.printStackTrace();
 			}
 			return true;
 		}
 		return false;
 	}
-
 	Optional<RobotInfo> nearGardenerWithoutTrees() {
 		return filterByType(rc.senseNearbyRobots(-1, enemy), RobotType.GARDENER).stream().filter(gardener -> {
 			MapLocation myLocation = rc.getLocation();

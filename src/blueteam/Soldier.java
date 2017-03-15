@@ -48,6 +48,8 @@ public class Soldier extends Robot {
 						stuckDetected = true;
 						rc.setIndicatorDot(rc.getLocation(), 255, 0, 0);
 						moveDir = randomFreeDirection();
+
+						// check if dir is not null, happens sometimes (added by LukasM)
 					}
 				}
 				if (!rc.canMove(moveDir)) {
