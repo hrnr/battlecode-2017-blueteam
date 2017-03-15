@@ -325,10 +325,14 @@ public class Gardener extends Robot {
 			break;
 		case ONLYSOLDIERS:
 			// while enemy archon is nearby build soldiers !!
-			if (isEnemyArchonNear())
-				if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS)
-					while (!build(RobotType.SOLDIER))
+			if (isEnemyArchonNear()) {
+				if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS) {
+					while (!build(RobotType.SOLDIER)) {
 						Clock.yield();
+					}
+					state = GardenerState.BUILDING;
+				}
+			}
 				else
 					state = GardenerState.FINDING;
 			break;
