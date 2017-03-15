@@ -184,7 +184,11 @@ public class LumberJack extends Robot {
 				if (loc.isPresent()) {
 					enemyLocation = loc.get();
 				} else {
-					enemyLocation = combatLocations.getActiveLocations()[0];
+					MapLocation[] activeLocations = combatLocations.getActiveLocations();
+					if(activeLocations.length > 0){
+						enemyLocation = combatLocations.getActiveLocations()[0];
+					}
+
 				}
 			}
 		} else {
