@@ -49,7 +49,8 @@ public class Soldier extends Robot {
 						rc.setIndicatorDot(rc.getLocation(), 255, 0, 0);
 						moveDir = randomFreeDirection();
 
-						// check if dir is not null, happens sometimes (added by LukasM)
+						// check if dir is not null, happens sometimes (added by
+						// LukasM)
 					}
 				}
 				if (!rc.canMove(moveDir)) {
@@ -66,7 +67,9 @@ public class Soldier extends Robot {
 		// ...then shoot (so that the robot does not kill itself).
 		if (victim != null) {
 			combatLocations.reportLocation(victim.getLocation());
-			if (shouldFireTriad(victim)) {
+			if (shouldFirePentad(victim)) {
+				rc.firePentadShot(rc.getLocation().directionTo(victim.getLocation()));
+			} else if (shouldFireTriad(victim)) {
 				rc.fireTriadShot(rc.getLocation().directionTo(victim.getLocation()));
 				return;
 			} else if (rc.canFireSingleShot()) {
@@ -86,8 +89,21 @@ public class Soldier extends Robot {
 				&& isEnemy(nearestInDirection(dir.rotateRightDegrees(offset)));
 	}
 
+	private boolean shouldFirePentad(RobotInfo victim) {
+		Direction dir = rc.getLocation().directionTo(victim.getLocation());
+		float offset = GameConstants.PENTAD_SPREAD_DEGREES;
+		return haveEnoughBulletsForPentad() && isEnemy(nearestInDirection(dir.rotateLeftDegrees(offset)))
+				&& isEnemy(nearestInDirection(dir.rotateRightDegrees(offset)))
+				&& isEnemy(nearestInDirection(dir.rotateLeftDegrees(2 * offset)))
+				&& isEnemy(nearestInDirection(dir.rotateRightDegrees(2 * offset)));
+	}
+
 	private boolean haveEnoughBullets() {
 		return rc.canFireTriadShot() && rc.getTeamBullets() > TeamConstants.MINIMUM_BULLETS_TO_SAVE_BY_SOLDIER;
+	}
+
+	private boolean haveEnoughBulletsForPentad() {
+		return rc.canFirePentadShot() && rc.getTeamBullets() > TeamConstants.MINIMUM_BULLETS_TO_SAVE_BY_SOLDIER;
 	}
 
 	private boolean shouldApproachToEnemy(RobotInfo victim) {
