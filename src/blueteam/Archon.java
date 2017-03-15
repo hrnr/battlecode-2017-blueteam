@@ -1,5 +1,6 @@
 package blueteam;
 
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
@@ -59,6 +60,13 @@ public class Archon extends Robot {
 				step++;
 			}
 		} else {
+			if (rc.getRoundNum() > 100 && rc.getRoundNum() < 150) {
+				while (getRobotCount(RobotType.SOLDIER) == 0) {
+					if (rc.getRoundNum() > 150)
+						break;
+					Clock.yield();
+				}
+			}
 			// we want to preserve some bullet points for gardener
 			if (rc.getTeamBullets() < TeamConstants.MINIMUM_BULLETS_TO_SAVE && getRobotCount(RobotType.GARDENER) > 5) {
 				return;
