@@ -64,7 +64,7 @@ public class Scout extends Robot {
 	void step() {
 		if (rc.hasMoved())
 			return;
-		Optional<RobotInfo> lumberjack = getNearestRobot(RobotType.LUMBERJACK, rc.getType().sensorRadius / 2f);
+		Optional<RobotInfo> lumberjack = getNearestRobot(RobotType.LUMBERJACK, rc.getType().sensorRadius / 3f);
 		if (lumberjack.isPresent()) {
 			rc.setIndicatorDot(lumberjack.get().getLocation(), 0, 0, 255);
 			dir = rc.getLocation().directionTo(lumberjack.get().getLocation()).opposite();
@@ -100,6 +100,7 @@ public class Scout extends Robot {
 
 		ArrayList<RobotInfo> gardeners = filterByType(rc.senseNearbyRobots(-1, enemy), RobotType.GARDENER);
 		if (gardeners.size() > 0) {
+			combatLocations.reportLocation(gardeners.get(0).getLocation());
 			Optional<RobotInfo> gardener = nearGardenerWithoutTrees();
 			if (gardener.isPresent()) {
 				if (rc.getLocation().distanceTo(gardener.get().getLocation()) > rc.getType().sensorRadius / 4) {

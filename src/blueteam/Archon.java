@@ -68,13 +68,14 @@ public class Archon extends Robot {
 				}
 			}
 			// we want to preserve some bullet points for gardener
-			if (rc.getTeamBullets() < TeamConstants.MINIMUM_BULLETS_TO_SAVE && getRobotCount(RobotType.GARDENER) > 5) {
+			if (rc.getTeamBullets() < TeamConstants.MINIMUM_BULLETS_TO_SAVE && getRobotCount(RobotType.GARDENER) > 2) {
 				return;
 			}
 			// randomly attempt to build a gardener if we need more
 
 			if (rc.canHireGardener(dir) && TeamConstants.DESIRED_NUMBER_OF_GARDENERS > getRobotCount(RobotType.GARDENER)) {
-				rc.hireGardener(dir);
+				if (rc.getTeamBullets()> 110)
+					rc.hireGardener(dir);
 			}
 		}
 	}
