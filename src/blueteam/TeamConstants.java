@@ -1,7 +1,5 @@
 package blueteam;
 
-import battlecode.common.Direction;
-
 public abstract interface TeamConstants {
 	public static final int DESIRED_NUMBER_OF_GARDENERS = 15;
 
@@ -66,5 +64,6 @@ public abstract interface TeamConstants {
 
 	public static final float SCOUT_AVOID_LUMBERJACK_RANGE = 45;
 	public static final float SCOUT_MOVEMENT_BLOCKED_DIR_RANGE = 180;
+	public static final int ROUNDS_BEFORE_PURSIUNG_SCOUTS = 700;
 
 }

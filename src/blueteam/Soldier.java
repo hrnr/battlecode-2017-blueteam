@@ -23,6 +23,11 @@ public class Soldier extends Robot {
 	private Direction moveDir;
 	private boolean stuckDetected = false;
 
+	/**
+	 * 1 => robot tries to avoid obstacles from the left, -1 from the right
+	 */
+	private int sign = 1;
+
 	Soldier(RobotController rc) {
 		super(rc);
 		moveDir = randomDirection();
@@ -35,38 +40,11 @@ public class Soldier extends Robot {
 
 		// First move...
 		if (!rc.hasMoved()) {
-			if (victim != null && shouldApproachToEnemy(victim)) {
-				// Move in the direction of the enemy
-				moveDir = rc.getLocation().directionTo(victim.getLocation());
-			} else {
-				MapLocation[] activeLocations = combatLocations.getActiveLocations();
-
-				if (activeLocations.length != 0 && !stuckDetected) {
-					moveDir = rc.getLocation().directionTo(activeLocations[0]);
-					rc.setIndicatorLine(rc.getLocation(), activeLocations[0], 255, 255, 0);
-					if (moveDir == null || !rc.canMove(moveDir)) {
-						stuckDetected = true;
-						rc.setIndicatorDot(rc.getLocation(), 255, 0, 0);
-						moveDir = randomFreeDirection();
-
-						// check if dir is not null, happens sometimes (added by
-						// LukasM)
-					}
-				}
-				if (!rc.canMove(moveDir)) {
-					// Move randomly
-
-					changeMoveDirection();
-					stuckDetected = false;
-					rc.setIndicatorDot(rc.getLocation(), 0, 255, 0);
-				}
-			}
-
-			tryMove(moveDir);
+			perform_movement(victim);
 		}
 		// ...then shoot (so that the robot does not kill itself).
 		if (victim != null) {
-			combatLocations.reportLocation(victim.getLocation());
+			reportEnemy(victim);
 			if (shouldFirePentad(victim)) {
 				rc.firePentadShot(rc.getLocation().directionTo(victim.getLocation()));
 			} else if (shouldFireTriad(victim)) {
@@ -80,6 +58,47 @@ public class Soldier extends Robot {
 			}
 		}
 
+	}
+
+	private void reportEnemy(RobotInfo victim) {
+		if (victim.getType() != RobotType.SCOUT || rc.getRoundNum() > TeamConstants.ROUNDS_BEFORE_PURSIUNG_SCOUTS)
+			combatLocations.reportLocation(victim.getLocation());
+	}
+
+	private void perform_movement(RobotInfo victim) {
+		if (victim != null && shouldApproachToEnemy(victim)) {
+			// Move in the direction of the enemy
+			moveDir = rc.getLocation().directionTo(victim.getLocation());
+			tryMove(moveDir);
+			return;
+		}
+
+		MapLocation[] activeLocations = combatLocations.getActiveLocations();
+
+		if (activeLocations.length != 0 && !stuckDetected) {
+			moveDir = rc.getLocation().directionTo(activeLocations[0]);
+			rc.setIndicatorLine(rc.getLocation(), activeLocations[0], 255, 255, 0);
+			if (moveDir == null || !tryMove(moveDir)) {
+				if (tryMove(moveDir.rotateLeftDegrees(90 * sign))) {
+					return;
+				}
+				sign = sign * -1;
+				stuckDetected = true;
+				rc.setIndicatorDot(rc.getLocation(), 255, 0, 0);
+				moveDir = randomFreeDirection();
+				// check if dir is not null, happens sometimes (added by
+				// LukasM)
+			} else {
+				return;
+			}
+		}
+		if (!tryMove(moveDir)) {
+			// Move randomly
+			changeMoveDirection();
+			stuckDetected = false;
+			rc.setIndicatorDot(rc.getLocation(), 0, 255, 0);
+		} else
+			return;
 	}
 
 	private boolean shouldFireTriad(RobotInfo victim) {
