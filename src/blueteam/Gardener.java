@@ -30,6 +30,43 @@ public class Gardener extends Robot {
 	int initTreeNum = 0;
 	float currentHealth = rc.getType().getStartingHealth();
 
+	void hideEnemy(){
+		if (rc.getRoundNum() > 150)
+			return;
+		//E
+		MapLocation init = rc.getInitialArchonLocations(enemy)[0];
+		MapLocation loc = init.add(Direction.NORTH,4);
+		loc = loc.add(Direction.WEST,9);
+		MapLocation loc2 = init.add(Direction.NORTH,4);
+		loc2 = loc2.add(Direction.WEST,1);
+		rc.setIndicatorLine(loc,loc2, 10,10,10);
+
+		loc = loc.add(Direction.SOUTH,4);
+		loc2 = loc2.add(Direction.SOUTH,4);
+		rc.setIndicatorLine(loc,loc2, 10,10,10);
+
+		loc = loc.add(Direction.SOUTH,4);
+		loc2 = loc2.add(Direction.SOUTH,4);
+		rc.setIndicatorLine(loc,loc2, 10,10,10);
+
+		loc2 = init.add(Direction.WEST,9);
+		loc2 = loc2.add(Direction.NORTH,4);
+		rc.setIndicatorLine(loc,loc2, 10,10,10);
+		//Z
+
+		loc = init.add(Direction.EAST,9);
+		loc = loc.add(Direction.NORTH,4);
+		loc2 = init.add(Direction.EAST,1);
+		loc2 = loc2.add(Direction.NORTH,4);
+		rc.setIndicatorLine(loc,loc2, 10,10,10);
+
+		loc2 = loc2.add(Direction.SOUTH,8);
+		rc.setIndicatorLine(loc,loc2, 10,10,10);
+
+		loc = loc.add(Direction.SOUTH,8);
+		rc.setIndicatorLine(loc,loc2, 10,10,10);
+	}
+
 	/**
 	 * Searches for suitable location to start building hexagonal tree garden
 	 *
@@ -257,6 +294,7 @@ public class Gardener extends Robot {
 	@Override
 	void step() {
 		checkHealth();
+		hideEnemy();
 		roundCounter++;
 		switch (state) {
 		case STARTING:
