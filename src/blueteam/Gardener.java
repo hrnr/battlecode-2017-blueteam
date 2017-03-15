@@ -312,12 +312,7 @@ public class Gardener extends Robot {
 				build(RobotType.SOLDIER);
 			// try to build again
 			double rnd = rand.nextDouble();
-			if (rnd < 0.25) {
-				if (getRobotCount(RobotType.SCOUT) < TeamConstants.MAX_NUMBER_SCOUTS)
-					build(RobotType.SCOUT);
-				else if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS)
-					build(RobotType.SOLDIER);
-			} else if (rnd < 0.5) {
+			if (rnd < 0.5) {
 				if (getRobotCount(RobotType.LUMBERJACK) < TeamConstants.MAX_NUMBER_LUMBERJACKS)
 					build(RobotType.LUMBERJACK);
 				else if (getRobotCount(RobotType.SOLDIER) < TeamConstants.MAX_NUMBER_SOLDIERS)
