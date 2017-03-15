@@ -79,9 +79,9 @@ public class Soldier extends Robot {
 			moveDir = rc.getLocation().directionTo(activeLocations[0]);
 			rc.setIndicatorLine(rc.getLocation(), activeLocations[0], 255, 255, 0);
 			if (moveDir == null || !tryMove(moveDir)) {
-				if (tryMove(moveDir.rotateLeftDegrees(90 * sign))) {
-					return;
-				}
+				if (moveDir != null)
+					if (tryMove(moveDir.rotateLeftDegrees(90 * sign)))
+						return;
 				sign = sign * -1;
 				stuckDetected = true;
 				rc.setIndicatorDot(rc.getLocation(), 255, 0, 0);

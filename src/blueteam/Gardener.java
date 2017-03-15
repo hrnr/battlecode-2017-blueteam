@@ -376,7 +376,7 @@ public class Gardener extends Robot {
 			break;
 		case LETSCHOP:
 			// build atleast one lumberjack and than try to build another in next  rounds
-			while (!build(RobotType.LUMBERJACK, true)) {
+			while (!build(RobotType.LUMBERJACK)) {
 				Clock.yield();
 			}
 			state = GardenerState.FINDING;
